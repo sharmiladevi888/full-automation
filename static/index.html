@@ -31,6 +31,8 @@
     color:var(--ink); font-family:var(--body); font-size:15px; line-height:1.55;
     -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   }
+
+  /* dead v2 override removed — final theme lives at the bottom of <style> */
   body::before{
     content:""; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.028;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -203,7 +205,8 @@
   .rv-modal{width:min(960px,100%); padding:24px}
   .rv-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px}
   .rv-body{display:grid; grid-template-columns:1.15fr 1fr; gap:20px; margin-top:18px}
-  @media (max-width:760px){ .rv-body{grid-template-columns:1fr} }
+  @media (max-width:760px){ .rv-body{grid-template-columns:1fr} .wf-steps{grid-template-columns:1fr 1fr} .wf-quickstart{padding:15px} }
+  @media (max-width:520px){ .wf-steps{grid-template-columns:1fr} .wf-quickstart-copy{flex-basis:100%} }
   .rv-meta{margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--muted)}
   .rv-frames-wrap{display:flex; flex-direction:column; min-height:0}
   .rv-frames-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
@@ -781,7 +784,17 @@
   .wf-node .nstat{display:inline-block; margin-top:9px; font-family:var(--mono); font-size:10px; letter-spacing:.04em;
     color:var(--teal); border:1px solid rgba(70,194,182,.3); border-radius:6px; padding:3px 8px; background:rgba(70,194,182,.06)}
   .wf-node .nact{padding:10px 14px 13px}
-  .wf-port{position:absolute; width:13px; height:13px; border-radius:50%; background:var(--bg); border:2px solid var(--violet);
+  .wf-quickstart{margin:18px 0 20px; padding:18px 20px; border:1px solid rgba(176,140,255,.28); border-radius:16px; background:linear-gradient(115deg,rgba(176,140,255,.11),rgba(75,212,198,.05) 58%,rgba(255,133,48,.06)); box-shadow:0 16px 38px -28px rgba(176,140,255,.55)}
+  .wf-quickstart-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+  .wf-kicker{font-family:var(--mono); font-size:10px; letter-spacing:.16em; color:var(--violet); font-weight:700}
+  .wf-quickstart-head strong{font-family:var(--disp); font-size:16px; letter-spacing:-.01em}
+  .wf-quickstart-copy{color:var(--muted); font-size:12.5px}
+  .wf-steps{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px}
+  .wf-step{display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border:1px solid rgba(255,255,255,.07); border-radius:11px; background:rgba(6,5,10,.22)}
+  .wf-step>b{font-family:var(--mono); color:var(--amber); font-size:11px; letter-spacing:.08em}
+  .wf-step strong{display:block; font-size:12.5px; color:var(--ink)}
+  .wf-step small{display:block; color:var(--muted); font-size:11px; line-height:1.35; margin-top:3px}
+  .wf-port{position:absolute;
     top:24px; z-index:2; box-shadow:0 0 8px -1px rgba(168,124,255,.7)}
   .wf-port.in{left:-7px} .wf-port.out{right:-7px; border-color:var(--amber); box-shadow:0 0 8px -1px rgba(255,122,24,.7)}
   .wf-legend{position:absolute; left:16px; bottom:14px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--faint);
@@ -1122,182 +1135,217 @@
      Lite-mode & reduced-motion safe (cheap shadows, no new always-on anims).
      ════════════════════════════════════════════════════════════════════ */
   :root{
-    /* deeper, cooler near-black base for more contrast & premium depth */
-    --bg:#070710; --bg2:#0c0c16; --panel:#13131f; --panel2:#191926;
-    --line:#23233a; --line2:#34344f;
-    --ink:#f4f3f8; --muted:#a7a4bd; --faint:#6f6c89;
-    /* unify the palette around the coral primary + one cool secondary;
-       legacy amber/violet/teal kept as harmonised supporting hues */
-    --accent:#e0805c; --accent-soft:#f0a585; --accent-deep:#c3623f;
-    --cool:#7c7cff; --cool-soft:#a3a3ff;
-    --amber:#e0805c; --amber-soft:#f0a585;
-    --violet:#7c7cff; --teal:#3fcabc;
-    --glow-amber:rgba(224,128,92,.34); --glow-violet:rgba(124,124,255,.30);
-    --glow-teal:rgba(63,202,188,.24);
-    --claude:#e0805c; --claude-soft:#f0a585; --claude-deep:#c3623f;
-    --radius:16px; --radius-lg:22px; --radius-sm:12px;
-    /* layered, soft premium elevation */
-    --shadow:0 1px 0 rgba(255,255,255,.04), 0 20px 50px -24px rgba(0,0,0,.85), 0 8px 18px -12px rgba(0,0,0,.6);
-    --ring:0 0 0 1px rgba(255,255,255,.04);
+    /* ═══ CONTINUITY STUDIO — MIDNIGHT NEON ═══
+       Deep inky navy + electric lime primary, hot magenta secondary, cyan support.
+       Bold, fun, premium — like a high-end video editing suite meets a neon arcade. */
+    --bg:#050a12; --bg2:#0a1019; --panel:#0f1722; --panel2:#14202e;
+    --line:#1c2d42; --line2:#294060;
+    --ink:#f0f4fa; --muted:#8b9ab8; --faint:#576a85;
+    /* ── NEON PALETTE ── */
+    --accent:#b4ff39; --accent-soft:#d0ff7f; --accent-deep:#8acc1e;
+    --cool:#ff3d8f; --cool-soft:#ff6fac;
+    --amber:#b4ff39; --amber-soft:#d0ff7f;
+    --violet:#bf6dff; --teal:#00e5d0;
+    --red:#ff4757; --green:#00e676;
+    --glow-amber:rgba(180,255,57,.30); --glow-violet:rgba(191,109,255,.28);
+    --glow-teal:rgba(0,229,208,.22); --glow-cool:rgba(255,61,143,.25);
+    --claude:#ff3d8f; --claude-soft:#ff6fac; --claude-deep:#d41d6e;
+    --radius:14px; --radius-lg:20px; --radius-sm:10px;
+    --shadow:0 1px 0 rgba(180,255,57,.04), 0 24px 56px -24px rgba(0,0,0,.85), 0 8px 20px -12px rgba(0,0,0,.5);
+    --ring:0 0 0 1px rgba(180,255,57,.06);
   }
-  body{font-size:15px; letter-spacing:.002em}
-  /* calmer ambient field — subtle, single soft wash (still disabled in lite) */
+  body{font-size:15px; letter-spacing:.005em}
+  /* ambient glow — subtle dual wash from corners */
   body::after{
     background:
-      radial-gradient(900px 560px at 12% -6%, rgba(224,128,92,.10), transparent 58%),
-      radial-gradient(820px 560px at 90% 2%, rgba(124,124,255,.09), transparent 60%) !important;
+      radial-gradient(1000px 600px at 5% -8%, rgba(180,255,57,.08), transparent 55%),
+      radial-gradient(900px 600px at 95% 5%, rgba(255,61,143,.06), transparent 55%),
+      radial-gradient(600px 400px at 50% 100%, rgba(0,229,208,.04), transparent 50%) !important;
   }
 
   /* ── command bar ─────────────────────────────────────────────── */
   header{
-    padding:15px 32px; border-bottom:1px solid var(--line);
-    background:linear-gradient(180deg, rgba(14,14,24,.94), rgba(14,14,24,.72));
-    box-shadow:0 1px 0 rgba(255,255,255,.03);
+    padding:13px 28px; border-bottom:1px solid rgba(28,45,66,.7);
+    background:linear-gradient(180deg, rgba(5,10,18,.96), rgba(5,10,18,.80));
+    box-shadow:0 1px 0 rgba(180,255,57,.04), 0 4px 20px -8px rgba(0,0,0,.4);
+    backdrop-filter:blur(20px) saturate(1.3);
   }
-  .filmstrip{background:linear-gradient(150deg,var(--accent),var(--cool));
-    box-shadow:inset 0 0 0 3px var(--bg), 0 0 30px -6px var(--glow-amber)}
+  .filmstrip{
+    background:conic-gradient(from 180deg, var(--accent), var(--cool), var(--violet), var(--teal), var(--accent));
+    box-shadow:inset 0 0 0 3px var(--bg), 0 0 24px -4px var(--glow-amber), 0 0 40px -10px var(--glow-cool);
+    border-radius:10px;
+  }
   .wordmark{font-size:19px; letter-spacing:-.025em;
-    background:linear-gradient(96deg,var(--ink) 18%,var(--accent-soft) 72%,var(--cool-soft));
+    background:linear-gradient(100deg, var(--ink) 20%, var(--accent) 60%, var(--cool));
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
-  .wordmark small{letter-spacing:.30em; -webkit-text-fill-color:var(--accent-soft); color:var(--accent-soft)}
+  .wordmark small{letter-spacing:.28em; -webkit-text-fill-color:var(--accent); color:var(--accent)}
   .pill{border-radius:999px; border-color:var(--line2);
-    background:rgba(18,18,30,.7); box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+    background:rgba(10,16,25,.8); box-shadow:inset 0 1px 0 rgba(180,255,57,.06)}
   .ghost-btn{border-radius:var(--radius-sm); border-color:var(--line2);
-    background:rgba(18,18,30,.6)}
+    background:rgba(10,16,25,.6)}
   .ghost-btn:hover{border-color:var(--accent); color:var(--accent-soft);
-    box-shadow:0 0 22px -10px var(--glow-amber)}
+    box-shadow:0 0 24px -8px var(--glow-amber)}
 
-  /* ── tabs ────────────────────────────────────────────────────── */
-  nav.tabs{gap:5px; padding-top:20px}
-  .tab{font-size:12px; font-weight:600; letter-spacing:.01em; padding:11px 17px;
-    border-radius:12px 12px 0 0; color:var(--muted)}
-  .tab:hover{background:rgba(255,255,255,.035); color:var(--ink)}
-  .tab.active{background:var(--panel); border-color:var(--line)}
+  /* ── tabs → pill-shaped neon highlights ──────────────────────── */
+  nav.tabs{gap:4px; padding-top:18px}
+  .tab{font-size:12px; font-weight:600; letter-spacing:.02em; padding:10px 16px;
+    border-radius:999px; color:var(--muted); transition:all .2s ease}
+  .tab:hover{background:rgba(180,255,57,.06); color:var(--ink)}
+  .tab.active{background:rgba(180,255,57,.12); border-color:rgba(180,255,57,.30);
+    color:var(--accent); box-shadow:0 0 20px -8px var(--glow-amber)}
   .tab.active .n{color:var(--accent)}
-  .tab.active::after{background:linear-gradient(90deg,var(--accent),var(--cool))}
+  .tab.active::after{background:var(--accent); height:2px; border-radius:0; bottom:-1px}
 
-  /* ── sheets / panels → richer glass ──────────────────────────── */
+  /* ── sheets / panels → deep glass cards ──────────────────────── */
   .sheet{
-    border-radius:0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
-    border-color:var(--line);
-    background:linear-gradient(180deg, rgba(25,25,38,.78), rgba(19,19,31,.9));
-    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.05);
-    padding:34px;
+    border-radius:var(--radius-lg);
+    border-color:rgba(28,45,66,.6);
+    background:linear-gradient(168deg, rgba(15,23,34,.85), rgba(10,16,25,.92));
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(180,255,57,.04);
+    padding:clamp(20px, 3vw, 36px);
   }
-  .sheet::before{background:linear-gradient(90deg,transparent,var(--accent),var(--cool),transparent);
-    opacity:.55; left:28px; right:28px}
+  .sheet::before{background:linear-gradient(90deg, transparent, var(--accent), var(--cool), transparent);
+    opacity:.35; left:30px; right:30px}
   .card{border-radius:var(--radius); border-color:var(--line);
-    background:linear-gradient(180deg, rgba(22,22,34,.6), rgba(16,16,26,.7))}
-  .card:hover{border-color:var(--line2); transform:translateY(-3px);
-    box-shadow:0 22px 44px -22px rgba(0,0,0,.75)}
+    background:linear-gradient(168deg, rgba(14,20,30,.7), rgba(8,14,22,.8))}
+  .card:hover{border-color:rgba(180,255,57,.25); transform:translateY(-3px);
+    box-shadow:0 20px 44px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(180,255,57,.1)}
 
   /* ── headings & rhythm ───────────────────────────────────────── */
-  h2.section{font-size:27px; font-weight:800; letter-spacing:-.025em;
-    background:linear-gradient(96deg,var(--ink) 28%,var(--accent-soft) 82%,var(--cool-soft));
+  h2.section{font-size:26px; font-weight:800; letter-spacing:-.025em;
+    background:linear-gradient(100deg, var(--ink) 25%, var(--accent) 70%, var(--cool));
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
-  .sub{color:var(--muted); font-size:14px; margin-bottom:26px}
-  .label{font-size:10.5px; letter-spacing:.18em; color:var(--faint)}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:24px}
+  .label{font-size:10.5px; letter-spacing:.16em; color:var(--faint); text-transform:uppercase}
 
-  /* ── inputs → quiet, tactile console fields ──────────────────── */
+  /* ── inputs → dark glass fields with neon focus ──────────────── */
   textarea,input[type=text],input[type=password],input[type=number],input[type=email],select{
-    border-radius:var(--radius-sm); background:rgba(0,0,0,.26);
-    border:1px solid var(--line2); padding:13px 15px;
-    transition:border-color .18s var(--ease-out), box-shadow .18s var(--ease-out), background .18s;
+    border-radius:var(--radius-sm); background:rgba(0,0,0,.30);
+    border:1px solid var(--line); padding:12px 14px;
+    transition:border-color .18s ease, box-shadow .18s ease, background .18s;
   }
-  textarea:hover,input:hover,select:hover{border-color:#3f3f5e}
+  textarea:hover,input:hover,select:hover{border-color:var(--line2)}
   textarea:focus,input:focus,select:focus{border-color:var(--accent);
-    background:rgba(0,0,0,.34);
-    box-shadow:0 0 0 3px rgba(224,128,92,.18), 0 8px 22px -14px var(--glow-amber)}
-  ::placeholder{color:var(--faint); opacity:.85}
+    background:rgba(0,0,0,.40);
+    box-shadow:0 0 0 3px rgba(180,255,57,.12), 0 0 28px -14px var(--glow-amber)}
+  ::placeholder{color:var(--faint); opacity:.8}
 
-  /* ── buttons → solid, confident, soft sheen ──────────────────── */
-  .btn{border-radius:var(--radius-sm); font-weight:600; font-size:13.5px;
-    padding:13px 22px; color:#fff;
-    background:linear-gradient(135deg,var(--accent),var(--accent-deep));
-    box-shadow:0 10px 26px -14px var(--glow-amber), inset 0 1px 0 rgba(255,255,255,.14);
+  /* ── buttons → NEON GLOW: lime primary, magenta accent ─────── */
+  .btn{border-radius:999px; font-weight:700; font-size:13px;
+    padding:12px 24px; color:#0a1019; letter-spacing:.01em;
+    background:linear-gradient(135deg, var(--accent), #9ee622);
+    box-shadow:0 8px 28px -10px var(--glow-amber), inset 0 1px 0 rgba(255,255,255,.20);
     transition:transform .2s var(--ease-spring), filter .2s, box-shadow .2s}
-  .btn:hover{filter:brightness(1.07); transform:translateY(-2px);
-    box-shadow:0 16px 34px -16px var(--glow-amber), inset 0 1px 0 rgba(255,255,255,.18)}
-  .btn:active{transform:translateY(0); filter:brightness(.97)}
-  .btn.glow,.btn.claude{background:linear-gradient(120deg,var(--accent),#ec9069 48%,var(--cool)); color:#fff}
-  .btn.violet{background:linear-gradient(120deg,var(--cool),#a3a3ff); color:#fff}
-  .btn.outline{background:transparent; color:var(--accent-soft); border:1px solid var(--line2);
-    box-shadow:none}
-  .btn.outline:hover{border-color:var(--accent); color:var(--accent);
-    background:rgba(224,128,92,.07); box-shadow:none}
-  .btn.danger{background:transparent; color:var(--red); border:1px solid rgba(255,90,77,.4); box-shadow:none}
+  .btn:hover{filter:brightness(1.1); transform:translateY(-2px);
+    box-shadow:0 14px 36px -12px var(--glow-amber), 0 0 0 1px rgba(180,255,57,.2)}
+  .btn:active{transform:translateY(0); filter:brightness(.95)}
+  .btn.glow,.btn.claude{background:linear-gradient(120deg, var(--cool), #ff6fac 48%, var(--violet)); color:#fff}
+  .btn.violet{background:linear-gradient(120deg, var(--violet), #d08fff); color:#fff}
+  .btn.outline{background:transparent; color:var(--accent); border:1px solid var(--line2);
+    box-shadow:none; border-radius:999px}
+  .btn.outline:hover{border-color:var(--accent); color:var(--accent-soft);
+    background:rgba(180,255,57,.06); box-shadow:0 0 16px -6px var(--glow-amber)}
+  .btn.danger{background:transparent; color:var(--red); border:1px solid rgba(255,71,87,.35); box-shadow:none}
 
-  /* ── AUTOPILOT FORM → prominent, clean hero panel ────────────── */
+  /* ── AUTOPILOT → neon-bordered hero card ──────────────────────── */
   .autopilot-bar{
-    border:1px solid var(--line2); border-radius:var(--radius-lg);
-    padding:26px 28px; margin-bottom:22px;
-    background:linear-gradient(180deg, rgba(224,128,92,.07), rgba(124,124,255,.04)), var(--panel2);
-    box-shadow:var(--shadow), 0 0 50px -28px var(--glow-amber);
+    border:1px solid rgba(180,255,57,.20); border-radius:var(--radius-lg);
+    padding:28px 30px; margin-bottom:22px;
+    background:linear-gradient(150deg, rgba(180,255,57,.04), rgba(255,61,143,.03) 50%, rgba(0,229,208,.03)), var(--panel);
+    box-shadow:var(--shadow), 0 0 60px -30px var(--glow-amber);
+    position:relative; overflow:hidden;
   }
-  .ap-icon{filter:drop-shadow(0 6px 14px rgba(224,128,92,.5))}
-  .ap-title{font-family:var(--disp); font-weight:800; font-size:21px; letter-spacing:-.015em;
-    background:linear-gradient(96deg,var(--ink),var(--accent-soft));
+  .autopilot-bar::after{content:""; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, transparent 5%, var(--accent), var(--cool), var(--violet), transparent 95%)}
+  .ap-icon{filter:drop-shadow(0 4px 16px var(--glow-amber))}
+  .ap-title{font-family:var(--disp); font-weight:800; font-size:22px; letter-spacing:-.02em;
+    background:linear-gradient(100deg, var(--ink), var(--accent-soft));
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
-  .ap-desc{color:var(--muted); font-size:13.5px; line-height:1.6}
+  .ap-desc{color:var(--muted); font-size:13.5px; line-height:1.65}
   .autopilot-bar textarea,.autopilot-bar input,.autopilot-bar select{font-size:14px}
-  /* group the option row into tidy, evenly-breathing fields */
   .opts{gap:14px}
-  .opt{min-width:130px}
-  .opt .label{margin-bottom:8px}
+  .opt{min-width:125px}
+  .opt .label{margin-bottom:7px}
 
-  /* ── range sliders → refined track + thumb (all browsers) ────── */
+  /* ── range sliders → neon track ──────────────────────────────── */
   input[type=range]{-webkit-appearance:none; appearance:none; height:24px;
     background:transparent; cursor:pointer; accent-color:var(--accent)}
-  input[type=range]::-webkit-slider-runnable-track{height:5px; border-radius:99px;
-    background:linear-gradient(90deg,var(--accent),var(--line2))}
-  input[type=range]::-moz-range-track{height:5px; border-radius:99px; background:var(--line2)}
-  input[type=range]::-moz-range-progress{height:5px; border-radius:99px; background:var(--accent)}
+  input[type=range]::-webkit-slider-runnable-track{height:4px; border-radius:99px;
+    background:linear-gradient(90deg, var(--accent), var(--line2))}
+  input[type=range]::-moz-range-track{height:4px; border-radius:99px; background:var(--line2)}
+  input[type=range]::-moz-range-progress{height:4px; border-radius:99px; background:var(--accent)}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none;
-    width:16px; height:16px; margin-top:-5.5px; border-radius:50%; background:#fff;
-    border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.4); transition:transform .12s}
+    width:16px; height:16px; margin-top:-6px; border-radius:50%; background:#fff;
+    border:3px solid var(--accent); box-shadow:0 0 10px var(--glow-amber); transition:transform .12s}
   input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%; background:#fff;
-    border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.4)}
-  input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.12)}
+    border:3px solid var(--accent); box-shadow:0 0 10px var(--glow-amber)}
+  input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.15)}
   input[type=range]:focus{outline:none}
-  input[type=range]:focus::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(224,128,92,.22)}
+  input[type=range]:focus::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(180,255,57,.18), 0 0 12px var(--glow-amber)}
 
   /* ── toggles, chips, badges ──────────────────────────────────── */
   .toggle{border-radius:var(--radius-sm); border-color:var(--line2)}
-  .toggle.on{border-color:rgba(224,128,92,.5); background:rgba(224,128,92,.08)}
-  .toggle.on .switch{background:var(--accent)} .toggle.on .switch::after{background:#fff}
+  .toggle.on{border-color:rgba(180,255,57,.40); background:rgba(180,255,57,.06)}
+  .toggle.on .switch{background:var(--accent)} .toggle.on .switch::after{background:#0a1019}
   .chip:hover,.sg-chip:hover{border-color:var(--accent); color:var(--accent)}
-  .badge.cont{color:var(--accent-soft); border-color:rgba(224,128,92,.35); background:rgba(224,128,92,.06)}
+  .badge.cont{color:var(--accent); border-color:rgba(180,255,57,.30); background:rgba(180,255,57,.06)}
 
-  /* ── progress bars ───────────────────────────────────────────── */
-  .q-fill,#apFill{background:linear-gradient(90deg,var(--accent),var(--cool)) !important}
+  /* ── progress bars → neon gradient fill ──────────────────────── */
+  .q-fill,#apFill{background:linear-gradient(90deg, var(--accent), var(--cool)) !important}
 
-  /* ── toasts → premium glass with accent rail ─────────────────── */
+  /* ── toasts → glass with neon left rail ──────────────────────── */
   .toast{border-radius:var(--radius-sm); border:1px solid var(--line2);
     border-left:3px solid var(--accent);
-    background:linear-gradient(180deg, rgba(26,26,40,.94), rgba(20,20,32,.94));
-    box-shadow:var(--shadow); font-weight:600}
+    background:linear-gradient(180deg, rgba(14,20,30,.95), rgba(10,16,25,.95));
+    box-shadow:var(--shadow); font-weight:600; backdrop-filter:blur(12px)}
   .toast.ok{border-left-color:var(--teal)} .toast.err{border-left-color:var(--red)}
 
-  /* ── skeleton loading shimmer (premium) ──────────────────────── */
+  /* ── skeleton shimmer → electric pulse ──────────────────────── */
   .sg-card.skeleton,.skeleton{position:relative; overflow:hidden;
-    background:linear-gradient(180deg, rgba(22,22,34,.6), rgba(16,16,26,.7)) !important;
-    border-style:dashed !important; border-color:var(--line2) !important}
+    background:linear-gradient(168deg, rgba(14,20,30,.6), rgba(8,14,22,.7)) !important;
+    border-style:dashed !important; border-color:var(--line) !important}
   .sg-card.skeleton::after,.skeleton::after{content:""; position:absolute; inset:0;
-    background:linear-gradient(100deg, transparent 20%, rgba(255,255,255,.06) 50%, transparent 80%);
-    transform:translateX(-100%); animation:shimmer 1.4s ease-in-out infinite}
+    background:linear-gradient(100deg, transparent 20%, rgba(180,255,57,.04) 50%, transparent 80%);
+    transform:translateX(-100%); animation:shimmer 1.6s ease-in-out infinite}
   @keyframes shimmer{to{transform:translateX(100%)}}
 
-  /* ── focusable affordances & links ───────────────────────────── */
-  a:focus-visible,button:focus-visible,.tab:focus-visible{outline:2px solid var(--accent-soft); outline-offset:2px}
+  /* ── focus rings → neon glow ─────────────────────────────────── */
+  a:focus-visible,button:focus-visible,.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px}
 
-  /* ── scrollbar harmonised to the accent ──────────────────────── */
-  *::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--line2),var(--accent-deep));
+  /* ── scrollbar → dark with accent thumb ──────────────────────── */
+  *::-webkit-scrollbar-thumb{background:linear-gradient(180deg, var(--line2), var(--accent-deep));
     border:3px solid var(--bg2); border-radius:99px}
   *::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 
-  /* lite mode keeps the new shadows/colours but drops the shimmer anim
-     (covered by the existing body.lite *:not(.spin) rule above). */
+  /* ── workflow nodes → floating glass cards ───────────────────── */
+  .wf-node{border-radius:var(--radius) !important;
+    background:linear-gradient(155deg, rgba(15,23,34,.90), rgba(8,14,22,.95)) !important;
+    border-color:rgba(28,45,66,.5) !important;
+    box-shadow:0 12px 30px -16px rgba(0,0,0,.6) !important;
+    transition:all .22s ease !important}
+  .wf-node:hover{border-color:var(--accent) !important;
+    box-shadow:0 16px 40px -16px rgba(0,0,0,.7), 0 0 0 1px rgba(180,255,57,.15), 0 0 30px -14px var(--glow-amber) !important;
+    transform:translateY(-2px) !important}
+  .wf-quickstart{border-color:rgba(180,255,57,.18);
+    background:linear-gradient(120deg, rgba(180,255,57,.05), rgba(0,229,208,.04)); border-radius:var(--radius-lg)}
+  .wf-step{background:rgba(5,10,18,.5); border-color:rgba(28,45,66,.4); border-radius:var(--radius-sm)}
+  .wf-kicker{color:var(--accent)}
+
+  /* ── selection ──────────────────────────────────────────────── */
+  ::selection{background:rgba(180,255,57,.28); color:#fff}
+
+  /* lite mode */
   body.lite .sg-card.skeleton::after, body.lite .skeleton::after{animation:none !important; opacity:0}
+
+  /* ── responsive ─────────────────────────────────────────────── */
+  @media(max-width:760px){
+    nav.tabs{padding:14px 10px 0; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch}
+    .tab{white-space:nowrap; flex-shrink:0}
+    main{padding:0 12px 70px}
+    .autopilot-bar{padding:18px 16px}
+    .sheet{padding:18px}
+  }
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
@@ -1403,6 +1451,20 @@
           <button class="wf-zbtn" onclick="wfZoom(0.2)" title="Zoom in" aria-label="Zoom in">+</button>
           <button class="wf-zbtn" onclick="wfReset()" title="Reset view" aria-label="Reset view" style="font-size:13px">⤢</button>
           <button class="btn outline sm" onclick="wfRefresh()" title="Refresh status">↻ Sync</button>
+        </div>
+      </div>
+
+      <div class="wf-quickstart" role="note" aria-label="Workflow quick start">
+        <div class="wf-quickstart-head">
+          <span class="wf-kicker">QUICK START</span>
+          <strong>From reference to finished video</strong>
+          <span class="wf-quickstart-copy">Use a link for style + voice, then choose a topic and let the engine build the rest.</span>
+        </div>
+        <div class="wf-steps">
+          <div class="wf-step"><b>01</b><span><strong>Study a reference</strong><small>Paste links or open Channel Analyser</small></span></div>
+          <div class="wf-step"><b>02</b><span><strong>Pick a topic</strong><small>Use a suggestion or your own angle</small></span></div>
+          <div class="wf-step"><b>03</b><span><strong>Lock the look</strong><small>Keep your style or copy the reference</small></span></div>
+          <div class="wf-step"><b>04</b><span><strong>Run the engine</strong><small>Script → cast → frames → edit</small></span></div>
         </div>
       </div>
 
@@ -2512,6 +2574,8 @@ https://youtube.com/playlist?list=…" class="inp" style="font-family:var(--mono
           <button class="prov-btn" id="imgProvLocal" onclick="switchImageProvider('local')" style="font-size:11px; padding:4px 12px; border:1px solid var(--line); border-radius:6px; cursor:pointer; background:none; color:var(--amber,#f0ac6b)">💻 Local (diffusers)</button>
           <button class="prov-btn" id="imgProvFlow" onclick="switchImageProvider('flow')" style="font-size:11px; padding:4px 12px; border:1px solid var(--line); border-radius:6px; cursor:pointer; background:none; color:var(--claude-soft,#c08cff)">🎬 Flow (extension)</button>
           <button class="prov-btn" id="imgProvPuter" onclick="switchImageProvider('puter')" style="font-size:11px; padding:4px 12px; border:1px solid var(--line); border-radius:6px; cursor:pointer; background:none; color:var(--teal,#3fdc8c)">☁️ Puter</button>
+          <button class="prov-btn" id="imgProvTokenbay" onclick="switchImageProvider('tokenbay')" style="font-size:11px; padding:4px 12px; border:1px solid var(--line); border-radius:6px; cursor:pointer; background:none; color:var(--teal,#3fdc8c)">🚀 TokenBay</button>
+          <button class="prov-btn" id="imgProvDashscope" onclick="switchImageProvider('dashscope')" style="font-size:11px; padding:4px 12px; border:1px solid var(--line); border-radius:6px; cursor:pointer; background:none; color:var(--amber,#f0ac6b)">🌐 QwenCloud</button>
         </div>
 
         <!-- derouter / OpenAI image section -->
@@ -2568,6 +2632,58 @@ https://youtube.com/playlist?list=…" class="inp" style="font-family:var(--mono
             <button class="btn outline sm" id="disconnectPuterImgBtn" onclick="disconnectPuterImage()" style="display:none">Disconnect</button>
           </div>
         </div><!-- /imgPuterSection -->
+
+        <!-- TokenBay image section -->
+        <div id="imgTokenbaySection" style="display:none">
+          <div id="imgTokenbayStatus" class="pill" style="margin-top:8px; width:max-content"><span class="dot"></span><span>not connected</span></div>
+          <p class="sub" style="font-size:11px; color:var(--muted); margin:6px 0 8px">
+            Image generation via <a href="https://api.tokenbay.com" target="_blank" rel="noopener" style="color:var(--amber-soft)">TokenBay</a>'s OpenAI-compatible /v1/chat/completions endpoint.
+            Models like <strong style="color:var(--teal)">gemini-2.5-flash-image</strong> return base64 PNG images inline in the chat response — no separate images API needed. Style refs &amp; character sheets are sent as inline vision content.
+          </p>
+          <div class="fld"><label class="label">TokenBay API key</label><input type="password" id="setTokenbayKey" placeholder="sk-..." onkeydown="if(event.key==='Enter')connectTokenbayImage()" /></div>
+          <div class="fld"><label class="label">Base URL</label><input type="text" id="setTokenbayBase" placeholder="https://api.tokenbay.com/v1" /></div>
+          <div class="fld"><label class="label">Model</label>
+            <input type="text" id="setTokenbayModel" list="setTokenbayModelList" placeholder="gemini-2.5-flash-image" style="flex:1"/>
+            <datalist id="setTokenbayModelList">
+              <option value="gemini-2.5-flash-image"></option>
+              <option value="gemini-2.5-flash"></option>
+              <option value="gemini-2.5-pro"></option>
+            </datalist>
+            <p class="hint" style="margin-top:6px"><strong style="color:var(--teal)">gemini-2.5-flash-image</strong> generates images via chat completions — works with style anchors &amp; character references.</p>
+          </div>
+          <div class="fld" style="display:flex; gap:10px; flex-wrap:wrap">
+            <button class="btn sm" onclick="connectTokenbayImage()">🎨 Connect TokenBay</button>
+            <button class="btn outline sm" id="disconnectTokenbayImgBtn" onclick="disconnectTokenbayImage()" style="display:none">Disconnect</button>
+          </div>
+        </div><!-- /imgTokenbaySection -->
+
+        <!-- DashScope / QwenCloud image section -->
+        <div id="imgDashscopeSection" style="display:none">
+          <div id="imgDashscopeStatus" class="pill" style="margin-top:8px; width:max-content"><span class="dot"></span><span>not connected</span></div>
+          <p class="sub" style="font-size:11px; color:var(--muted); margin:6px 0 8px">
+            Image generation via <a href="https://home.qwencloud.com" target="_blank" rel="noopener" style="color:var(--amber-soft)">QwenCloud / DashScope</a> (Alibaba).
+            Supports <strong style="color:var(--amber)">Wan 2.7</strong> (wan2.7-image-pro) and <strong style="color:var(--teal)">Qwen Image</strong> (qwen-image-2.0-pro) models.
+            Get a free key at <a href="https://home.qwencloud.com/benefits" target="_blank" rel="noopener" style="color:var(--amber-soft)">QwenCloud Benefits</a> or <a href="https://bailian.console.aliyun.com/#/api-key" target="_blank" rel="noopener" style="color:var(--amber-soft)">DashScope Console</a>.
+          </p>
+          <div class="fld"><label class="label">DashScope API key</label><input type="password" id="setDashscopeKey" placeholder="sk-..." onkeydown="if(event.key==='Enter')connectDashscopeImage()" /></div>
+          <div class="fld"><label class="label">Base URL</label><input type="text" id="setDashscopeBase" placeholder="https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation" /></div>
+          <div class="fld"><label class="label">Model</label>
+            <input type="text" id="setDashscopeModel" list="setDashscopeModelList" placeholder="wan2.7-image-pro" style="flex:1"/>
+            <datalist id="setDashscopeModelList">
+              <option value="wan2.7-image-pro"></option>
+              <option value="wan2.7-image"></option>
+              <option value="qwen-image-2.0-pro"></option>
+              <option value="qwen-image-2.0"></option>
+              <option value="qwen-image-max"></option>
+              <option value="qwen-image-plus"></option>
+            </datalist>
+            <p class="hint" style="margin-top:6px"><strong style="color:var(--amber)">wan2.7-image-pro</strong> = best quality (4K support, thinking mode). <strong style="color:var(--teal)">qwen-image-2.0-pro</strong> = best text rendering &amp; complex layouts.</p>
+          </div>
+          <div class="fld" style="display:flex; gap:10px; flex-wrap:wrap">
+            <button class="btn sm" onclick="connectDashscopeImage()">🌐 Connect QwenCloud</button>
+            <button class="btn outline sm" id="disconnectDashscopeImgBtn" onclick="disconnectDashscopeImage()" style="display:none">Disconnect</button>
+          </div>
+        </div><!-- /imgDashscopeSection -->
 
         <!-- 9Router image section -->
         <div id="img9routerSection" style="display:none">
@@ -3954,6 +4070,7 @@ function hasImageKey(){
   if(CFG.image_provider==="local") return true;          // local model, no key required
   if(CFG.image_provider==="puter") return !!CFG.has_puter_key;
   if(CFG.image_provider==="9router") return !!CFG.has_ninerouter_key;
+  if(CFG.image_provider==="tokenbay") return !!CFG.has_tokenbay_key;
   return !!CFG.has_api_key;
 }
 function setApi(ok){
@@ -4044,13 +4161,13 @@ async function switchImageProvider(p){
   }catch(e){ toast(e.message,"err"); }
   renderImageProviderUI();
   refreshProviderUI();
-  const labels={derouter:"derouter / OpenAI","9router":"9Router (local)",puter:"Puter (free/credit)","pollinations":"Pollinations (free, no key)","local":"Local diffusers (free, runs on this machine)",flow:"Google Flow (free, via Chrome extension)"};
+  const labels={derouter:"derouter / OpenAI","9router":"9Router (local)",puter:"Puter (free/credit)","pollinations":"Pollinations (free, no key)","local":"Local diffusers (free, runs on this machine)",flow:"Google Flow (free, via Chrome extension)",tokenbay:"TokenBay (Gemini Flash Image)",dashscope:"QwenCloud / DashScope (Wan 2.7 + Qwen Image)"};
   toast("Image provider → "+(labels[p]||p),"ok");
 }
 function renderImageProviderUI(){
   const p=CFG.image_provider||"derouter";
-  const btnMap={derouter:"imgProvDerouter","9router":"imgProv9router",puter:"imgProvPuter",pollinations:"imgProvPollinations",local:"imgProvLocal",flow:"imgProvFlow"};
-  const accent={derouter:"var(--amber-soft)",puter:"var(--teal,#3fdc8c)",pollinations:"var(--teal,#3fdc8c)",local:"var(--amber,#f0ac6b)",flow:"var(--claude-soft,#c08cff)"};
+  const btnMap={derouter:"imgProvDerouter","9router":"imgProv9router",puter:"imgProvPuter",pollinations:"imgProvPollinations",local:"imgProvLocal",flow:"imgProvFlow",tokenbay:"imgProvTokenbay",dashscope:"imgProvDashscope"};
+  const accent={derouter:"var(--amber-soft)",puter:"var(--teal,#3fdc8c)",pollinations:"var(--teal,#3fdc8c)",local:"var(--amber,#f0ac6b)",flow:"var(--claude-soft,#c08cff)",tokenbay:"var(--teal,#3fdc8c)",dashscope:"var(--amber,#f0ac6b)"};
   Object.keys(btnMap).forEach(k=>{
     const b=$("#"+btnMap[k]); if(!b) return;
     const on=p===k;
@@ -4059,13 +4176,15 @@ function renderImageProviderUI(){
     b.style.color=on?col:(k==="derouter"?"var(--ink)":col);
     b.style.boxShadow=on?("inset 0 -2px 0 "+col):"none";
   });
-  const ds=$("#imgDerouterSection"), ns=$("#img9routerSection"), ps=$("#imgPollinationsSection"), ls=$("#imgLocalSection"), fs=$("#imgFlowSection"), pts=$("#imgPuterSection");
+  const ds=$("#imgDerouterSection"), ns=$("#img9routerSection"), ps=$("#imgPollinationsSection"), ls=$("#imgLocalSection"), fs=$("#imgFlowSection"), pts=$("#imgPuterSection"), tbs=$("#imgTokenbaySection"), dss=$("#imgDashscopeSection");
   if(ds) ds.style.display=p==="derouter"?"block":"none";
   if(ns) ns.style.display=p==="9router"?"block":"none";
   if(ps) ps.style.display=p==="pollinations"?"block":"none";
   if(ls) ls.style.display=p==="local"?"block":"none";
   if(fs) fs.style.display=p==="flow"?"block":"none";
   if(pts) pts.style.display=p==="puter"?"block":"none";
+  if(tbs) tbs.style.display=p==="tokenbay"?"block":"none";
+  if(dss) dss.style.display=p==="dashscope"?"block":"none";
   if(p==="puter"){
     if($("#setPuterModel") && CFG.puter_model) $("#setPuterModel").value=CFG.puter_model||"gpt-image-2";
     if(CFG.has_puter_key){ const db=$("#disconnectPuterImgBtn"); if(db) db.style.display="inline-flex"; }
@@ -4080,6 +4199,28 @@ function renderImageProviderUI(){
     if($("#set9rImgBase") && !$("#set9rImgBase").value) $("#set9rImgBase").value=CFG.ninerouter_image_base_url||"http://localhost:20128/v1";
     if($("#set9rImgModel") && !$("#set9rImgModel").value) $("#set9rImgModel").value=CFG.ninerouter_image_model||"gpt-image-2";
     if(CFG.has_ninerouter_key){ const db=$("#disconnect9routerImgBtn"); if(db) db.style.display="inline-flex"; }
+  }
+  if(p==="tokenbay"){
+    if($("#setTokenbayBase") && !$("#setTokenbayBase").value) $("#setTokenbayBase").value=CFG.tokenbay_base_url||"https://api.tokenbay.com/v1";
+    if($("#setTokenbayModel") && !$("#setTokenbayModel").value) $("#setTokenbayModel").value=CFG.tokenbay_model||"gemini-2.5-flash-image";
+    if(CFG.has_tokenbay_key){ const db=$("#disconnectTokenbayImgBtn"); if(db) db.style.display="inline-flex"; }
+    const el=$("#imgTokenbayStatus");
+    if(el){
+      el.innerHTML = CFG.has_tokenbay_key
+        ? `<span class="dot ok"></span><span>connected · ${CFG.tokenbay_model||'ready'}</span>`
+        : `<span class="dot"></span><span>not connected</span>`;
+    }
+  }
+  if(p==="dashscope"){
+    if($("#setDashscopeBase") && !$("#setDashscopeBase").value) $("#setDashscopeBase").value=CFG.dashscope_base_url||"https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
+    if($("#setDashscopeModel") && !$("#setDashscopeModel").value) $("#setDashscopeModel").value=CFG.dashscope_model||"wan2.7-image-pro";
+    if(CFG.has_dashscope_key){ const db=$("#disconnectDashscopeImgBtn"); if(db) db.style.display="inline-flex"; }
+    const el=$("#imgDashscopeStatus");
+    if(el){
+      el.innerHTML = CFG.has_dashscope_key
+        ? `<span class="dot ok"></span><span>connected · ${CFG.dashscope_model||'ready'}</span>`
+        : `<span class="dot"></span><span>not connected</span>`;
+    }
   }
   if(p==="pollinations"){
     if($("#setPollinationsModel") && CFG.pollinations_model) $("#setPollinationsModel").value = CFG.pollinations_model;
@@ -4207,6 +4348,86 @@ async function disconnectPuterImage(){
     renderImageProviderUI(); refreshProviderUI();
     const el=$("#imgPuterStatus"); if(el) el.innerHTML=`<span class="dot"></span><span>not connected</span>`;
     const db=$("#disconnectPuterImgBtn"); if(db) db.style.display="none";
+    toast("Image provider → derouter / OpenAI","ok");
+  }catch(e){ toast(e.message,"err"); }
+}
+async function connectTokenbayImage(){
+  const key=$("#setTokenbayKey").value.trim();
+  if(!key && !CFG.has_tokenbay_key){ toast("Paste your TokenBay API key first","err"); $("#setTokenbayKey").focus(); return; }
+  const el=$("#imgTokenbayStatus");
+  if(el) el.innerHTML=`<span class="dot" style="background:var(--amber)"></span><span>connecting…</span>`;
+  try{
+    const body={
+      image_provider: "tokenbay",
+      tokenbay_base_url: ($("#setTokenbayBase").value.trim() || "https://api.tokenbay.com/v1"),
+      tokenbay_model: ($("#setTokenbayModel").value.trim() || "gemini-2.5-flash-image")
+    };
+    if(key) body.tokenbay_api_key=key;
+    const d=await api("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    CFG.image_provider=d.image_provider||"tokenbay";
+    CFG.has_tokenbay_key=d.has_tokenbay_key;
+    CFG.tokenbay_model=body.tokenbay_model;
+    CFG.tokenbay_base_url=body.tokenbay_base_url;
+    const h=await api("/api/health"); const im=h.image||{};
+    refreshProviderUI();
+    if(im.ok){
+      if(el) el.innerHTML=`<span class="dot ok"></span><span>connected · ${im.configured_model||CFG.tokenbay_model}</span>`;
+      toast("TokenBay connected ✓","ok"); confettiBurst();
+      const db=$("#disconnectTokenbayImgBtn"); if(db) db.style.display="inline-flex";
+    } else {
+      if(el) el.innerHTML=`<span class="dot" style="background:var(--red)"></span><span>connected but verification failed: ${_esc(im.error||"unknown")}</span>`;
+      toast("TokenBay connection verification failed","err");
+    }
+  }catch(e){ if(el) el.innerHTML=`<span class="dot" style="background:var(--red)"></span><span>${_esc(e.message)}</span>`; toast(e.message,"err"); }
+  finally{ $("#setTokenbayKey").value=""; }
+}
+async function disconnectTokenbayImage(){
+  try{
+    const d=await api("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image_provider:"derouter"})});
+    CFG.image_provider="derouter";
+    renderImageProviderUI(); refreshProviderUI();
+    const el=$("#imgTokenbayStatus"); if(el) el.innerHTML=`<span class="dot"></span><span>not connected</span>`;
+    const db=$("#disconnectTokenbayImgBtn"); if(db) db.style.display="none";
+    toast("Image provider → derouter / OpenAI","ok");
+  }catch(e){ toast(e.message,"err"); }
+}
+async function connectDashscopeImage(){
+  const key=$("#setDashscopeKey").value.trim();
+  if(!key && !CFG.has_dashscope_key){ toast("Paste your DashScope/QwenCloud API key first","err"); $("#setDashscopeKey").focus(); return; }
+  const el=$("#imgDashscopeStatus");
+  if(el) el.innerHTML=`<span class="dot" style="background:var(--amber)"></span><span>connecting…</span>`;
+  try{
+    const body={
+      image_provider: "dashscope",
+      dashscope_base_url: ($("#setDashscopeBase").value.trim() || "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"),
+      dashscope_model: ($("#setDashscopeModel").value.trim() || "wan2.7-image-pro")
+    };
+    if(key) body.dashscope_api_key=key;
+    const d=await api("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    CFG.image_provider=d.image_provider||"dashscope";
+    CFG.has_dashscope_key=d.has_dashscope_key;
+    CFG.dashscope_model=body.dashscope_model;
+    CFG.dashscope_base_url=body.dashscope_base_url;
+    const h=await api("/api/health"); const im=h.image||{};
+    refreshProviderUI();
+    if(im.ok){
+      if(el) el.innerHTML=`<span class="dot ok"></span><span>connected · ${im.configured_model||CFG.dashscope_model}</span>`;
+      toast("QwenCloud / DashScope connected ✓","ok"); confettiBurst();
+      const db=$("#disconnectDashscopeImgBtn"); if(db) db.style.display="inline-flex";
+    } else {
+      if(el) el.innerHTML=`<span class="dot" style="background:var(--red)"></span><span>connected but verification failed: ${_esc(im.error||"unknown")}</span>`;
+      toast("DashScope connection verification failed","err");
+    }
+  }catch(e){ if(el) el.innerHTML=`<span class="dot" style="background:var(--red)"></span><span>${_esc(e.message)}</span>`; toast(e.message,"err"); }
+  finally{ $("#setDashscopeKey").value=""; }
+}
+async function disconnectDashscopeImage(){
+  try{
+    const d=await api("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image_provider:"derouter"})});
+    CFG.image_provider="derouter";
+    renderImageProviderUI(); refreshProviderUI();
+    const el=$("#imgDashscopeStatus"); if(el) el.innerHTML=`<span class="dot"></span><span>not connected</span>`;
+    const db=$("#disconnectDashscopeImgBtn"); if(db) db.style.display="none";
     toast("Image provider → derouter / OpenAI","ok");
   }catch(e){ toast(e.message,"err"); }
 }

@@ -52,16 +52,27 @@ class ImageClient:
         self.base_url = (base_url or config.BASE_URL).rstrip("/")
         self.model = model or config.MODEL
         self.timeout = timeout or config.TIMEOUT
-        # SDK is used for generations; api_key may be empty until set in UI.
+        # Bulk key round-robin state
+        self._bulk_keys = list(config.DEROUTER_API_KEYS) if not api_key else []
+        self._key_idx = 0
+        
+        self._sdk = None
+        self._init_sdk(self._next_key())
+        self._or_fallback = None
+
+    def _next_key(self):
+        if self._bulk_keys:
+            key = self._bulk_keys[self._key_idx % len(self._bulk_keys)]
+            self._key_idx += 1
+            return key
+        return self.api_key
+
+    def _init_sdk(self, key):
         self._sdk = OpenAI(
-            api_key=self.api_key or "unset",
+            api_key=key or "unset",
             base_url=self.base_url,
             timeout=self.timeout,
         )
-        # Lazily-built OpenRouter client used as a fallback when the primary
-        # derouter endpoint returns an HTTP 402 billing/wallet error. Only
-        # created on first need and only if a key + the toggle are present.
-        self._or_fallback = None
 
     # ------------------------------------------------------------------ #
     #  Billing / 402 handling
@@ -211,6 +222,9 @@ class ImageClient:
 
     def _generate_once(self, prompt, size=None, quality=None):
         self._require_key()
+        key = self._next_key()
+        self._init_sdk(key)
+        
         size = self._snap_size(size or config.DEFAULT_SIZE)
         quality = quality or config.DEFAULT_QUALITY
         kwargs = {"model": self.model, "prompt": prompt}
@@ -296,6 +310,8 @@ class ImageClient:
         self._require_key()
         if not images:
             raise ValueError("edit() needs at least one reference image")
+
+        key = self._next_key()
         size = self._snap_size(size or config.DEFAULT_SIZE)
         quality = quality or config.DEFAULT_QUALITY
 
@@ -337,7 +353,7 @@ class ImageClient:
         try:
             resp = requests.post(
                 url,
-                headers={"Authorization": f"Bearer {self.api_key}"},
+                headers={"Authorization": f"Bearer {key}"},
                 files=files,
                 data=data,
                 timeout=self.timeout,
@@ -397,7 +413,11 @@ class OpenRouterImageClient:
 
     def __init__(self, api_key=None, base_url=None, model=None, timeout=None):
         self.api_key = api_key or config.OPENROUTER_API_KEY
+        # Bulk key round-robin state
+        self._bulk_keys = list(config.OPENROUTER_API_KEYS) if not api_key else []
+        self._key_idx = 0
         url_raw = (base_url or config.OPENROUTER_BASE_URL).rstrip("/")
+
         # If the settings passed the OpenAI images endpoint (e.g. /images/generations
         # or /images/edits), strip them so the chat completions path works.
         for suffix in ("/images/generations", "/images/edits", "/images"):
@@ -416,21 +436,29 @@ class OpenRouterImageClient:
         self.model = m
         self.timeout = timeout or config.OPENROUTER_TIMEOUT
 
+    def _next_key(self):
+        if self._bulk_keys:
+            key = self._bulk_keys[self._key_idx % len(self._bulk_keys)]
+            self._key_idx += 1
+            return key
+        return self.api_key
+
     def _require_key(self):
-        if not self.api_key:
+        if not self.api_key and not self._bulk_keys:
             raise RuntimeError(
                 "No OpenRouter API key set. Add OPENROUTER_API_KEY to your .env "
                 "or paste a key in the Settings panel."
             )
 
     def ping(self):
-        if not self.api_key:
+        key = self._next_key()
+        if not key:
             return {"ok": False, "error": "no api key set"}
         url = f"{self.base_url}/models"
         try:
             r = requests.get(
                 url,
-                headers={"Authorization": f"Bearer {self.api_key}"},
+                headers={"Authorization": f"Bearer {key}"},
                 timeout=20,
             )
         except requests.RequestException as e:
@@ -569,6 +597,7 @@ class OpenRouterImageClient:
 
     def _generate_once(self, prompt, size=None, quality=None):
         self._require_key()
+        key = self._next_key()
         size = size or config.DEFAULT_SIZE
         sized_prompt = prompt + self._size_instruction(size)
         url = f"{self.base_url}/chat/completions"
@@ -583,7 +612,7 @@ class OpenRouterImageClient:
             resp = requests.post(
                 url,
                 headers={
-                    "Authorization": f"Bearer {self.api_key}",
+                    "Authorization": f"Bearer {key}",
                     "Content-Type": "application/json",
                 },
                 json=body,
@@ -623,6 +652,7 @@ class OpenRouterImageClient:
         self._require_key()
         if not images:
             return self._generate_once(prompt, size, quality)
+        key = self._next_key()
         size = size or config.DEFAULT_SIZE
         sized_prompt = prompt + self._size_instruction(size)
         content_parts = []
@@ -646,7 +676,7 @@ class OpenRouterImageClient:
             resp = requests.post(
                 url,
                 headers={
-                    "Authorization": f"Bearer {self.api_key}",
+                    "Authorization": f"Bearer {key}",
                     "Content-Type": "application/json",
                 },
                 json=body,
@@ -670,6 +700,296 @@ class OpenRouterImageClient:
         return self._force_aspect(raw, size)
 
 
+class DashScopeImageClient:
+    """Image generation via Alibaba DashScope / QwenCloud.
+
+    Supports both Wan 2.7 image models (wan2.7-image-pro, wan2.7-image) and
+    Qwen image models (qwen-image-2.0-pro, qwen-image-2.0) through the
+    multimodal-generation endpoint.  All models use the same API format:
+    messages-based input, synchronous response with image URLs.
+
+    Endpoint (intl/Singapore):
+        POST https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+    Endpoint (Beijing):
+        POST https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+
+    Response returns image URLs (valid 24h) in output.choices[].message.content[].image
+    """
+
+    def __init__(self, api_key=None, base_url=None, model=None, timeout=None):
+        self.api_key = api_key or config.DASHSCOPE_API_KEY
+        self.base_url = (base_url or config.DASHSCOPE_BASE_URL).rstrip("/")
+        self.model = model or config.DASHSCOPE_MODEL
+        self.timeout = timeout or config.DASHSCOPE_TIMEOUT
+        # Bulk key round-robin state
+        self._bulk_keys = list(config.DASHSCOPE_API_KEYS) if not api_key else []
+        self._key_idx = 0
+
+    def _next_key(self):
+        """Round-robin through bulk keys if available, else use the single key."""
+        if self._bulk_keys:
+            key = self._bulk_keys[self._key_idx % len(self._bulk_keys)]
+            self._key_idx += 1
+            return key
+        return self.api_key
+
+    def _require_key(self):
+        if not self.api_key and not self._bulk_keys:
+            raise RuntimeError(
+                "No DashScope/QwenCloud API key set. Add DASHSCOPE_API_KEY to "
+                "your .env or paste a key in the Settings panel."
+            )
+
+    def ping(self):
+        """Verify connectivity by hitting the models endpoint."""
+        key = self._next_key()
+        if not key:
+            return {"ok": False, "error": "no api key set"}
+        # DashScope compatible-mode has a /models endpoint
+        compat_base = self.base_url.split("/api/v1/services/")[0] + "/compatible-mode/v1"
+        url = f"{compat_base}/models"
+        try:
+            r = requests.get(
+                url,
+                headers={"Authorization": f"Bearer {key}"},
+                timeout=15,
+            )
+        except requests.RequestException as e:
+            # Fall back: if /models fails, try a cheap call to the generation endpoint
+            return {"ok": True, "models": [], "configured_model": self.model,
+                    "base_url": self.base_url,
+                    "warning": f"Could not reach /models ({e}), assuming ok."}
+        if r.status_code >= 400:
+            return {"ok": False, "error": f"HTTP {r.status_code}: {r.text[:300]}"}
+        return {"ok": True, "configured_model": self.model, "base_url": self.base_url}
+
+    def _size_to_dashscope(self, size):
+        """Convert WxH size string to DashScope format.
+
+        Wan 2.7 supports: "1K", "2K", "4K" or explicit "WIDTHxHEIGHT".
+        Qwen Image supports explicit "WIDTH*HEIGHT".
+        DashScope uses '*' separator, not 'x'.
+        """
+        if not size or size == "auto":
+            return "2K"
+        # If it's already in DashScope format (1K, 2K, 4K)
+        if size.upper() in ("1K", "2K", "4K"):
+            return size.upper()
+        # Convert WxH to W*H
+        try:
+            w, h = size.lower().split("x")
+            return f"{int(w)}*{int(h)}"
+        except Exception:
+            return "2K"
+
+    def generate(self, prompt, size=None, quality=None, retry=True, index=0):
+        if not retry:
+            return self._generate_once(prompt, size, quality)
+        return image_queue.run_with_retry(
+            lambda: self._generate_once(prompt, size, quality),
+            index=index, model=self.model, label="dashscope-generate")
+
+    def _generate_once(self, prompt, size=None, quality=None):
+        self._require_key()
+        key = self._next_key()
+        ds_size = self._size_to_dashscope(size or config.DEFAULT_SIZE)
+
+        body = {
+            "model": self.model,
+            "input": {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [{"text": prompt}]
+                    }
+                ]
+            },
+            "parameters": {
+                "size": ds_size,
+                "n": 1,
+                "watermark": False,
+            }
+        }
+        # Wan 2.7 supports thinking_mode for better quality on text-to-image
+        if self.model.startswith("wan"):
+            body["parameters"]["thinking_mode"] = True
+
+        _log(f"dashscope generate model={self.model} size={ds_size} "
+             f"prompt_len={len(prompt)} base={self.base_url}")
+        print("--- DASHSCOPE BODY ---", flush=True)
+        print(json.dumps(body, indent=2), flush=True)
+        print("----------------------", flush=True)
+        # log to file
+        with open("C:/Users/sickv/dashscope_body.json", "w") as f:
+            json.dump(body, f, indent=2)
+        t0 = time.time()
+        try:
+            resp = requests.post(
+                self.base_url,
+                headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+                timeout=self.timeout,
+            )
+        except requests.RequestException as e:
+            raise RuntimeError(
+                f"could not reach DashScope at {self.base_url} — {e}"
+            )
+        dt = time.time() - t0
+        _log(f"dashscope generate -> HTTP {resp.status_code} in {dt:.1f}s")
+
+        if resp.status_code >= 400:
+            raise RuntimeError(
+                f"DashScope image gen failed [HTTP {resp.status_code}]: "
+                f"{resp.text[:600]}"
+            )
+
+        try:
+            data = resp.json()
+        except ValueError:
+            raise RuntimeError(
+                f"DashScope returned non-JSON: {resp.text[:400]}"
+            )
+
+        return self._extract_image(data, size or config.DEFAULT_SIZE)
+
+    def _extract_image(self, data, size=None):
+        """Extract image bytes from DashScope response.
+
+        Response formats seen:
+        - {image: "url"}  (qwen-image-2.0 — no type field)
+        - {image: "url", type: "image"}
+        - {b64_image|b64_json: "..."}
+        """
+        choices = (data.get("output") or {}).get("choices") or []
+        if not choices:
+            raise RuntimeError(
+                f"DashScope returned no choices: {json.dumps(data)[:500]}"
+            )
+        content = (choices[0].get("message") or {}).get("content") or []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            image_url = item.get("image") or ""
+            if not image_url:
+                continue
+            # Accept both typed and untyped content items
+            if item.get("type") not in (None, "", "image"):
+                continue
+            _log(f"dashscope downloading image from {image_url[:80]}...")
+            try:
+                img_resp = requests.get(image_url, timeout=60)
+                if img_resp.status_code >= 400:
+                    raise RuntimeError(
+                        f"Failed to download DashScope image "
+                        f"[HTTP {img_resp.status_code}]"
+                    )
+                return _enforce_aspect(img_resp.content, size)
+            except requests.RequestException as e:
+                raise RuntimeError(
+                    f"Failed to download DashScope image: {e}"
+                )
+        # Fallback: base64 payloads
+        for item in content:
+            if isinstance(item, dict):
+                b64 = item.get("b64_image") or item.get("b64_json")
+                if b64:
+                    return _enforce_aspect(base64.b64decode(b64), size)
+        raise RuntimeError(
+            f"DashScope response contained no image: {json.dumps(data)[:500]}"
+        )
+
+    def edit(self, prompt, images, size=None, quality=None, mask=None,
+             retry=True, index=0, multi_image_edit=None):
+        """Edit with reference images via DashScope multimodal-generation.
+
+        Reference images are sent as base64 data URIs in the content array,
+        same as the native DashScope format.
+        """
+        if not retry:
+            return self._edit_once(prompt, images, size, quality)
+        return image_queue.run_with_retry(
+            lambda: self._edit_once(prompt, images, size, quality),
+            index=index, model=self.model, label="dashscope-edit")
+
+    def _edit_once(self, prompt, images, size=None, quality=None):
+        self._require_key()
+        if not images:
+            return self._generate_once(prompt, size, quality)
+
+        key = self._next_key()
+        ds_size = self._size_to_dashscope(size or config.DEFAULT_SIZE)
+
+        # Build content array with images + text
+        content = []
+        for i, img_bytes in enumerate(images[:9]):  # DashScope supports 0-9 images
+            b64 = base64.b64encode(img_bytes).decode()
+            content.append({"image": f"data:image/png;base64,{b64}"})
+        content.append({"text": prompt})
+
+        body = {
+            "model": self.model,
+            "input": {
+                "messages": [
+                    {"role": "user", "content": content}
+                ]
+            },
+            "parameters": {
+                "size": ds_size,
+                "n": 1,
+                "watermark": False,
+            }
+        }
+
+        _log(f"dashscope edit model={self.model} refs={len(images)} "
+             f"size={ds_size} prompt_len={len(prompt)}")
+        print("--- DASHSCOPE EDIT BODY ---", flush=True)
+        # print first image length instead of full b64
+        body_copy = json.loads(json.dumps(body))
+        for m_item in body_copy["input"]["messages"]:
+            for c_item in m_item["content"]:
+                if "image" in c_item and c_item["image"].startswith("data:image"):
+                    c_item["image"] = c_item["image"][:100] + "... [TRUNCATED B64]"
+        print(json.dumps(body_copy, indent=2), flush=True)
+        print("---------------------------", flush=True)
+        # log to file
+        with open("C:/Users/sickv/dashscope_edit_body.json", "w") as f:
+            json.dump(body_copy, f, indent=2)
+        t0 = time.time()
+        try:
+            resp = requests.post(
+                self.base_url,
+                headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+                timeout=self.timeout,
+            )
+        except requests.RequestException as e:
+            raise RuntimeError(
+                f"could not reach DashScope at {self.base_url} — {e}"
+            )
+        dt = time.time() - t0
+        _log(f"dashscope edit -> HTTP {resp.status_code} in {dt:.1f}s")
+
+        if resp.status_code >= 400:
+            raise RuntimeError(
+                f"DashScope image edit failed [HTTP {resp.status_code}]: "
+                f"{resp.text[:600]}"
+            )
+
+        try:
+            data = resp.json()
+        except ValueError:
+            raise RuntimeError(
+                f"DashScope returned non-JSON: {resp.text[:400]}"
+            )
+        return self._extract_image(data, size or config.DEFAULT_SIZE)
+
+
 class PuterImageClient:
     """Image generation and editing via Puter.js REST API.
 
@@ -679,12 +999,22 @@ class PuterImageClient:
 
     def __init__(self, api_key=None, base_url=None, model=None, timeout=None):
         self.api_key = api_key or ""
+        # Bulk key round-robin state
+        self._bulk_keys = list(config.PUTER_API_KEYS) if not api_key else []
+        self._key_idx = 0
         self.base_url = "https://api.puter.com/drivers/call"
         self.model = model or "gpt-image-2"
         self.timeout = timeout or 300
 
+    def _next_key(self):
+        if self._bulk_keys:
+            key = self._bulk_keys[self._key_idx % len(self._bulk_keys)]
+            self._key_idx += 1
+            return key
+        return self.api_key
+
     def _require_key(self):
-        if not self.api_key:
+        if not self.api_key and not self._bulk_keys:
             raise RuntimeError(
                 "No Puter Auth Token set. Please paste your puter-auth-token "
                 "in the Settings panel under Puter Image Provider."
@@ -692,7 +1022,8 @@ class PuterImageClient:
 
     def ping(self):
         """Cheap validation: trigger a testMode txt2img call."""
-        if not self.api_key:
+        key = self._next_key()
+        if not key:
             return {"ok": False, "error": "no puter auth token set"}
         try:
             r = requests.post(
@@ -706,7 +1037,7 @@ class PuterImageClient:
                         "prompt": "ping",
                         "model": self.model,
                     },
-                    "auth_token": self.api_key,
+                    "auth_token": key,
                 },
                 timeout=15,
             )
@@ -738,6 +1069,7 @@ class PuterImageClient:
 
     def _generate_once(self, prompt, size=None, quality=None):
         self._require_key()
+        key = self._next_key()
         size = size or config.DEFAULT_SIZE
         quality = quality or config.DEFAULT_QUALITY
         ratio = self._parse_ratio(size)
@@ -762,7 +1094,7 @@ class PuterImageClient:
                     "test_mode": False,
                     "method": "generate",
                     "args": args,
-                    "auth_token": self.api_key,
+                    "auth_token": key,
                 },
                 timeout=self.timeout,
             )
@@ -792,6 +1124,7 @@ class PuterImageClient:
         self._require_key()
         if not images:
             return self._generate_once(prompt, size, quality)
+        key = self._next_key()
         size = size or config.DEFAULT_SIZE
         quality = quality or config.DEFAULT_QUALITY
         ratio = self._parse_ratio(size)
@@ -824,7 +1157,7 @@ class PuterImageClient:
                     "test_mode": False,
                     "method": "generate",
                     "args": args,
-                    "auth_token": self.api_key,
+                    "auth_token": key,
                 },
                 timeout=self.timeout,
             )

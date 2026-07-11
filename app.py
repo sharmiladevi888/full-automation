@@ -50,7 +50,7 @@ import config
 import pipeline
 import store
 import editor
-from derouter import ImageClient, OpenRouterImageClient, PuterImageClient
+from derouter import ImageClient, OpenRouterImageClient, PuterImageClient, DashScopeImageClient
 from claude_client import ClaudeClient, extract_json
 
 store.init()
@@ -270,6 +270,12 @@ async def auth_middleware(request: Request, call_next):
         "gemini_base_url": user_data.get("gemini_base_url", getattr(config, "GEMINI_BASE_URL", "")),
         "puter_api_key": user_data.get("puter_api_key", ""),
         "puter_model": user_data.get("puter_model", "gpt-image-2"),
+        "tokenbay_api_key": user_data.get("tokenbay_api_key", getattr(config, "TOKENBAY_API_KEY", "")),
+        "tokenbay_model": user_data.get("tokenbay_model", getattr(config, "TOKENBAY_MODEL", "gemini-2.5-flash-image")),
+        "tokenbay_base_url": user_data.get("tokenbay_base_url", getattr(config, "TOKENBAY_BASE_URL", "https://api.tokenbay.com/v1")),
+        "dashscope_api_key": user_data.get("dashscope_api_key", getattr(config, "DASHSCOPE_API_KEY", "")),
+        "dashscope_model": user_data.get("dashscope_model", getattr(config, "DASHSCOPE_MODEL", "wan2.7-image-pro")),
+        "dashscope_base_url": user_data.get("dashscope_base_url", getattr(config, "DASHSCOPE_BASE_URL", "")),
     }
     response = await call_next(request)
     # Security headers
@@ -408,6 +414,10 @@ def _has_image_key(request: Request) -> bool:
         return True   # no key required — local model
     if s.get("image_provider") == "flow":
         return True   # no key — images generated externally via the Flow browser extension
+    if s.get("image_provider") == "tokenbay":
+        return bool(s.get("tokenbay_api_key"))
+    if s.get("image_provider") == "dashscope":
+        return bool(s.get("dashscope_api_key"))
     return bool(s.get("api_key"))
 
 
@@ -434,8 +444,11 @@ def _resolve_image(s: dict):
                 "https://api.puter.com/drivers/call",
                 s.get("puter_model", "gpt-image-2"))
     if s.get("image_provider") == "9router":
-        return (s.get("ninerouter_api_key", ""),
-                (s.get("ninerouter_image_base_url") or config.NINEROUTER_IMAGE_BASE_URL),
+        # Windows localhost resolution intermittently fails on this host.
+        # Keep the OpenAI-compatible router strictly on IPv4 loopback.
+        base = (s.get("ninerouter_image_base_url") or config.NINEROUTER_IMAGE_BASE_URL)
+        base = base.replace("://localhost", "://127.0.0.1")
+        return (s.get("ninerouter_api_key", ""), base,
                 s.get("ninerouter_image_model") or config.NINEROUTER_IMAGE_MODEL)
     if s.get("image_provider") == "pollinations":
         # No api_key. The model id is the short id from the Pollinations
@@ -449,6 +462,14 @@ def _resolve_image(s: dict):
         # Local diffusers — model id is the short name (sdxl-turbo /
         # sdxl-base / flux-schnell). No base_url / api_key needed.
         return ("", "", s.get("diffusers_model") or "sdxl-turbo")
+    if s.get("image_provider") == "tokenbay":
+        return (s.get("tokenbay_api_key", ""),
+                (s.get("tokenbay_base_url") or config.TOKENBAY_BASE_URL),
+                s.get("tokenbay_model") or config.TOKENBAY_MODEL)
+    if s.get("image_provider") == "dashscope":
+        return (s.get("dashscope_api_key", ""),
+                (s.get("dashscope_base_url") or config.DASHSCOPE_BASE_URL),
+                s.get("dashscope_model") or config.DASHSCOPE_MODEL)
     return (s.get("api_key", ""),
             s.get("base_url", config.BASE_URL),
             s.get("model", config.MODEL))
@@ -504,6 +525,22 @@ def _client_from_settings(s: dict):
         )
     if s.get("image_provider") == "puter":
         return PuterImageClient(api_key=api_key, base_url=base_url, model=model)
+    # TokenBay: chat-completions image gen (gemini-2.5-flash-image returns
+    # base64 PNG inline in assistant message — same pattern as OpenRouter).
+    if s.get("image_provider") == "tokenbay":
+        print(f"[image] tokenbay provider: model={model} base={base_url} — "
+              f"using OpenRouterImageClient (chat completions)", flush=True)
+        return OpenRouterImageClient(
+            api_key=api_key, base_url=base_url, model=model,
+        )
+    # DashScope / QwenCloud: Wan 2.7 + Qwen Image models via the
+    # multimodal-generation endpoint. Returns image URLs, not base64.
+    if s.get("image_provider") == "dashscope":
+        print(f"[image] dashscope provider: model={model} base={base_url}",
+              flush=True)
+        return DashScopeImageClient(
+            api_key=api_key, base_url=base_url, model=model,
+        )
     # 9Router with a chat-based image model (ag/ = Gemini Flash image-gen):
     # these models work via chat/completions, NOT /images/edits. Use the
     # OpenRouterImageClient which sends refs as inline vision + extracts the
@@ -728,6 +765,14 @@ def api_state(request: Request):
             "has_agentrouter_key": bool(s.get("agentrouter_api_key")),
             "puter_model": s.get("puter_model", "gpt-image-2"),
             "has_puter_key": bool(s.get("puter_api_key")),
+            "tokenbay_model": s.get("tokenbay_model", getattr(config, "TOKENBAY_MODEL", "gemini-2.5-flash-image")),
+            "tokenbay_base_url": s.get("tokenbay_base_url", getattr(config, "TOKENBAY_BASE_URL", "https://api.tokenbay.com/v1")),
+            "tokenbay_models": getattr(config, "TOKENBAY_MODELS", ["gemini-2.5-flash-image"]),
+            "has_tokenbay_key": bool(s.get("tokenbay_api_key")),
+            "dashscope_model": s.get("dashscope_model", getattr(config, "DASHSCOPE_MODEL", "wan2.7-image-pro")),
+            "dashscope_base_url": s.get("dashscope_base_url", getattr(config, "DASHSCOPE_BASE_URL", "")),
+            "dashscope_models": getattr(config, "DASHSCOPE_MODELS", ["wan2.7-image-pro"]),
+            "has_dashscope_key": bool(s.get("dashscope_api_key")),
         },
     }
 
@@ -836,6 +881,12 @@ class SettingsIn(BaseModel):
     gemini_base_url: Optional[str] = None
     puter_api_key: Optional[str] = None
     puter_model: Optional[str] = None
+    tokenbay_api_key: Optional[str] = None
+    tokenbay_model: Optional[str] = None
+    tokenbay_base_url: Optional[str] = None
+    dashscope_api_key: Optional[str] = None
+    dashscope_model: Optional[str] = None
+    dashscope_base_url: Optional[str] = None
 
 
 @app.post("/api/settings")
@@ -891,6 +942,12 @@ def api_settings(s: SettingsIn, request: Request):
     if s.gemini_base_url: user_settings["gemini_base_url"] = s.gemini_base_url.strip().rstrip("/")
     if s.puter_api_key is not None: user_settings["puter_api_key"] = s.puter_api_key.strip()
     if s.puter_model: user_settings["puter_model"] = s.puter_model.strip()
+    if s.tokenbay_api_key is not None: user_settings["tokenbay_api_key"] = s.tokenbay_api_key.strip()
+    if s.tokenbay_model: user_settings["tokenbay_model"] = s.tokenbay_model.strip()
+    if s.tokenbay_base_url: user_settings["tokenbay_base_url"] = s.tokenbay_base_url.strip().rstrip("/")
+    if s.dashscope_api_key is not None: user_settings["dashscope_api_key"] = s.dashscope_api_key.strip()
+    if s.dashscope_model: user_settings["dashscope_model"] = s.dashscope_model.strip()
+    if s.dashscope_base_url: user_settings["dashscope_base_url"] = s.dashscope_base_url.strip().rstrip("/")
 
     vault[email] = user_settings
     save_vault(vault)
@@ -905,6 +962,10 @@ def api_settings(s: SettingsIn, request: Request):
             if user_settings.get("image_provider") == "puter"
             else bool(user_settings.get("ninerouter_api_key"))
             if user_settings.get("image_provider") == "9router"
+            else bool(user_settings.get("tokenbay_api_key"))
+            if user_settings.get("image_provider") == "tokenbay"
+            else bool(user_settings.get("dashscope_api_key"))
+            if user_settings.get("image_provider") == "dashscope"
             else bool(user_settings.get("api_key"))
         ),
         "has_claude_key": bool(user_settings.get("claude_api_key") or user_settings.get("anthropic_api_key") or user_settings.get("agentrouter_api_key")),
@@ -929,6 +990,14 @@ def api_settings(s: SettingsIn, request: Request):
         "has_agentrouter_key": bool(user_settings.get("agentrouter_api_key")),
         "has_gemini_key": bool(user_settings.get("gemini_api_key")),
         "has_puter_key": bool(user_settings.get("puter_api_key")),
+        "has_tokenbay_key": bool(user_settings.get("tokenbay_api_key")),
+        "tokenbay_model": user_settings.get("tokenbay_model", "gemini-2.5-flash-image"),
+        "tokenbay_base_url": user_settings.get("tokenbay_base_url", "https://api.tokenbay.com/v1"),
+        "tokenbay_models": getattr(config, "TOKENBAY_MODELS", ["gemini-2.5-flash-image"]),
+        "has_dashscope_key": bool(user_settings.get("dashscope_api_key")),
+        "dashscope_model": user_settings.get("dashscope_model", "wan2.7-image-pro"),
+        "dashscope_base_url": user_settings.get("dashscope_base_url", config.DASHSCOPE_BASE_URL),
+        "dashscope_models": getattr(config, "DASHSCOPE_MODELS", ["wan2.7-image-pro"]),
         "image_provider": user_settings.get("image_provider", "derouter"),
         "claude_provider": user_settings.get("claude_provider", "derouter"),
     }
@@ -1826,10 +1895,23 @@ def _img_settings_snapshot(request: Request) -> dict:
     # Resolve against the active image_provider so the queue's render workers
     # (which read these flat keys) use 9Router when it's selected.
     api_key, base_url, model = _resolve_image(s)
+    # Queue workers run after the request returns. Keep the provider-specific
+    # credential fields too: _client_from_settings() resolves them again.
+    # Without ninerouter_api_key, manual batch rendering silently used an empty
+    # bearer token even though direct workflow renders worked.
     return {
         "api_key": api_key, "base_url": base_url,
         "model": model, "multi_image_edit": s["multi_image_edit"],
         "image_provider": s.get("image_provider", "derouter"),
+        "ninerouter_api_key": s.get("ninerouter_api_key", ""),
+        "ninerouter_image_base_url": s.get("ninerouter_image_base_url", ""),
+        "ninerouter_image_model": s.get("ninerouter_image_model", ""),
+        "tokenbay_api_key": s.get("tokenbay_api_key", ""),
+        "tokenbay_base_url": s.get("tokenbay_base_url", ""),
+        "tokenbay_model": s.get("tokenbay_model", ""),
+        "dashscope_api_key": s.get("dashscope_api_key", ""),
+        "dashscope_base_url": s.get("dashscope_base_url", ""),
+        "dashscope_model": s.get("dashscope_model", ""),
     }
 
 
@@ -2613,22 +2695,52 @@ def _ensure_virality(sugs):
 
 def _fallback_suggestions(sources, n_suggestions):
     """Build a minimal but VALID suggestions list when the LLM never returned a
-    usable one. Seeds each idea from a source video title so the cards are at
-    least grounded in the references, and flags them as estimated. Guarantees a
-    non-empty list (never raises) so the caller can avoid a hard 500."""
+    usable one. Instead of repeating the source title N times, generate varied
+    angles derived from the source material so the user gets distinct options.
+    Flags each as a fallback so the UI can show it's estimated."""
     titles = [(s.get("title") or "").strip()
               for s in (sources or []) if (s.get("title") or "").strip()]
+    transcripts = [(s.get("transcript") or "").strip()
+                   for s in (sources or []) if (s.get("transcript") or "").strip()]
+
+    # Build a pool of distinct topic angles from the source material.
+    base_title = titles[0] if titles else ""
+    # Extract keywords from transcripts to vary the angles
+    keywords = []
+    for t in transcripts:
+        words = [w.strip(".,!?\"'()[]").lower() for w in t.split()]
+        keywords.extend([w for w in words if len(w) > 4 and w.isalpha()])
+    # Deduplicate, keep order
+    seen = set()
+    unique_kw = [w for w in keywords if w not in seen and not seen.add(w)]
+
+    angle_templates = [
+        ("The hidden side of {kw}", "A deeper dive into {kw} that the reference only hinted at — fresh context and surprising angles."),
+        ("What everyone gets wrong about {kw}", "A myth-busting take on {kw}, challenging the conventional wisdom."),
+        ("{kw} explained in 60 seconds", "A fast-paced, high-energy breakdown of {kw} for short-form."),
+        ("The untold story behind {kw}", "A narrative-driven exploration of {kw} with a fresh perspective."),
+        ("Why {kw} matters more than you think", "A compelling case for why {kw} is underappreciated, with real stakes."),
+        ("{kw}: then vs now", "A before-and-after comparison showing how {kw} has evolved."),
+        ("The dark side of {kw}", "A provocative look at the risks and downsides of {kw}."),
+        ("{kw} but from a different angle", "A completely fresh perspective on {kw} that flips the usual framing."),
+        ("5 things about {kw} that blew my mind", "A listicle-style rapid-fire of surprising facts about {kw}."),
+        ("What if {kw} is just the beginning?", "A forward-looking take on where {kw} is heading next."),
+    ]
+
     out = []
     for i in range(max(1, int(n_suggestions or 1))):
-        base = titles[i % len(titles)] if titles else ""
-        title = (f"Idea inspired by: {base}" if base
-                 else f"Reference-style idea #{i + 1}")
+        kw = unique_kw[i] if i < len(unique_kw) else (base_title[:30] or "this topic")
+        template_title, template_logline = angle_templates[i % len(angle_templates)]
+        title = template_title.format(kw=kw)[:120]
+        logline = template_logline.format(kw=kw)
         out.append({
-            "title": title[:120],
-            "logline": ("A short-form video in the same style and pacing as the "
-                        "reference set."),
-            "virality_reason": ("Auto-generated fallback — refine with a clearer "
-                                "reference set for a real score."),
+            "title": title,
+            "logline": logline,
+            "virality_reason": ("Auto-generated fallback — the AI analysis didn't "
+                                 "return clean ideas. Try again or use a different "
+                                 "reference for real virality scoring."),
+            "virality_score": 50,
+            "total_duration": 60,
             "_fallback": True,
         })
     return out

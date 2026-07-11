@@ -6,9 +6,38 @@ EDL produced by Claude (see claude_client.ClaudeClient.plan_edit).
 import json
 import math
 import os
+import shutil
 import subprocess
+import sys
 from typing import List, Dict, Optional
 
+
+# Resolve ffmpeg/ffprobe binaries: prefer the local ffmpeg_bin/ shipped with
+# the project, then fall back to PATH. Windows needs the .exe suffix.
+_BIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg_bin")
+
+
+def _resolve_bin(name):
+    """Return the path to ffmpeg/ffprobe, preferring the local ffmpeg_bin/."""
+    # 1. Local bundled binary (ffmpeg_bin/ffmpeg.exe etc.)
+    if sys.platform.startswith("win"):
+        candidate = os.path.join(_BIN_DIR, name + ".exe")
+        if os.path.isfile(candidate):
+            return candidate
+    else:
+        candidate = os.path.join(_BIN_DIR, name)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    # 2. On PATH (shutil.which handles cross-platform lookup)
+    found = shutil.which(name)
+    if found:
+        return found
+    # 3. Last resort: return the bare name so the error message is familiar
+    return name
+
+
+FFMPEG = _resolve_bin("ffmpeg")
+FFPROBE = _resolve_bin("ffprobe")
 
 
 # Default ceilings (seconds) for ffmpeg/ffprobe subprocess calls so a hung
@@ -69,7 +98,7 @@ def split_long_holds(shots: List[Dict], max_hold: float = 6.0,
 def probe_duration(path: str) -> float:
     """Return media duration in seconds via ffprobe."""
     cmd = [
-        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        FFPROBE, "-v", "error", "-show_entries", "format=duration",
         "-of", "json", path,
     ]
     proc = _run(cmd, timeout=_PROBE_TIMEOUT, what="ffprobe duration")
@@ -124,7 +153,7 @@ def trim_silence(input_path: str, output_path: str = None,
     if pad_s > 0:
         delay_ms = int(round(pad_s * 1000))
         af += f",adelay={delay_ms}|{delay_ms},apad=pad_dur={pad_s}"
-    cmd = ["ffmpeg", "-y", "-i", input_path, "-af", af,
+    cmd = [FFMPEG, "-y", "-i", input_path, "-af", af,
            "-c:a", "libmp3lame", "-q:a", "2", out]
     proc = _run(cmd, timeout=_RENDER_TIMEOUT, what="ffmpeg trim-silence")
     if proc.returncode != 0 or not os.path.exists(out):
@@ -139,7 +168,7 @@ def detect_scenes(video_path: str, threshold: float = 0.4) -> List[float]:
     """Return a list of scene-change timestamps (seconds) using ffmpeg's
     scene detector. Threshold 0..1 (lower = more cuts)."""
     cmd = [
-        "ffmpeg", "-i", video_path, "-filter:v",
+        FFMPEG, "-i", video_path, "-filter:v",
         f"select='gt(scene,{threshold})',showinfo",
         "-f", "null", "-",
     ]
@@ -187,7 +216,7 @@ def bookend_video(main_path, out_path, intro_img=None, outro_img=None,
         vf = (f"scale={width}:{height}:force_original_aspect_ratio=increase,"
               f"crop={width}:{height},setsar=1,"
               f"fade=t=in:st=0:d=0.4,fade=t=out:st={max(0,dur-0.4):.3f}:d=0.4")
-        cmd = ["ffmpeg", "-y", "-loop", "1", "-t", f"{dur:.3f}", "-i", img,
+        cmd = [FFMPEG, "-y", "-loop", "1", "-t", f"{dur:.3f}", "-i", img,
                "-f", "lavfi", "-t", f"{dur:.3f}",
                "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
                "-vf", vf, "-r", str(fps),
@@ -199,7 +228,7 @@ def bookend_video(main_path, out_path, intro_img=None, outro_img=None,
         return cp
 
     def _has_audio(path):
-        r = _run(["ffprobe", "-v", "error", "-select_streams", "a",
+        r = _run([FFPROBE, "-v", "error", "-select_streams", "a",
                   "-show_entries", "stream=index", "-of", "csv=p=0", path],
                  timeout=_PROBE_TIMEOUT, what="ffprobe audio-check")
         return bool(r.stdout.strip())
@@ -209,7 +238,7 @@ def bookend_video(main_path, out_path, intro_img=None, outro_img=None,
         if _has_audio(path):
             return path
         outp = os.path.join(tmp, name)
-        cmd = ["ffmpeg", "-y", "-i", path, "-f", "lavfi",
+        cmd = [FFMPEG, "-y", "-i", path, "-f", "lavfi",
                "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
                "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
                "-c:a", "aac", "-b:a", "192k", "-shortest", outp]
@@ -228,7 +257,7 @@ def bookend_video(main_path, out_path, intro_img=None, outro_img=None,
         inputs += ["-i", p]
     fc = ("".join(f"[{i}:v][{i}:a]" for i in range(len(parts))) +
           f"concat=n={len(parts)}:v=1:a=1[v][a]")
-    cmd = ["ffmpeg", "-y", *inputs, "-filter_complex", fc,
+    cmd = [FFMPEG, "-y", *inputs, "-filter_complex", fc,
            "-map", "[v]", "-map", "[a]",
            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast",
            "-crf", "20", "-c:a", "aac", "-b:a", "192k", out_path]
@@ -310,14 +339,14 @@ def assemble_video(
             # explode the duration when fed a looped still.
             frames = max(2, round(dur * fps))
             cmd = [
-                "ffmpeg", "-y", "-loop", "1", "-i", sh["path"],
+                FFMPEG, "-y", "-loop", "1", "-i", sh["path"],
                 "-vf", vf, "-frames:v", str(frames), "-r", str(fps),
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast", "-crf", "20",
                 clip,
             ]
         else:
             cmd = [
-                "ffmpeg", "-y", "-loop", "1", "-t", f"{dur:.3f}",
+                FFMPEG, "-y", "-loop", "1", "-t", f"{dur:.3f}",
                 "-i", sh["path"], "-vf", vf, "-r", str(fps),
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast", "-crf", "20",
                 clip,
@@ -354,7 +383,7 @@ def assemble_video(
             last_label = new_label
             cum += clip_paths[i][1] - xfade_d
         filtergraph = filtergraph.rstrip(";")
-        cmd = ["ffmpeg", "-y", *inputs, "-filter_complex", filtergraph,
+        cmd = [FFMPEG, "-y", *inputs, "-filter_complex", filtergraph,
                "-map", f"[{last_label}]",
                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "veryfast", "-crf", "20",
                silent_video]
@@ -368,7 +397,7 @@ def assemble_video(
             for cp, _ in clip_paths:
                 # ffmpeg concat needs forward slashes / escaped quotes
                 f.write(f"file '{os.path.abspath(cp).replace(os.sep, '/')}'\n")
-        cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path,
+        cmd = [FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", list_path,
                "-c", "copy", silent_video]
         proc = _run(cmd, timeout=_RENDER_TIMEOUT, what="ffmpeg concat")
         if proc.returncode != 0:
@@ -379,7 +408,7 @@ def assemble_video(
     has_music = bool(music_path and os.path.exists(music_path))
     mv = max(0.0, min(1.0, float(music_volume)))
     if has_vo and has_music:
-        cmd = ["ffmpeg", "-y",
+        cmd = [FFMPEG, "-y",
                "-i", silent_video, "-i", audio_path,
                "-stream_loop", "-1", "-i", music_path,
                "-filter_complex",
@@ -389,20 +418,20 @@ def assemble_video(
                "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                "-shortest", output_path]
     elif has_vo:
-        cmd = ["ffmpeg", "-y",
+        cmd = [FFMPEG, "-y",
                "-i", silent_video, "-i", audio_path,
                "-map", "0:v:0", "-map", "1:a:0",
                "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                "-shortest", output_path]
     elif has_music:
-        cmd = ["ffmpeg", "-y",
+        cmd = [FFMPEG, "-y",
                "-i", silent_video, "-stream_loop", "-1", "-i", music_path,
                "-filter_complex", f"[1:a]volume={mv}[a]",
                "-map", "0:v:0", "-map", "[a]",
                "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                "-shortest", output_path]
     else:
-        cmd = ["ffmpeg", "-y", "-i", silent_video, "-c", "copy", output_path]
+        cmd = [FFMPEG, "-y", "-i", silent_video, "-c", "copy", output_path]
 
     proc = _run(cmd, timeout=_RENDER_TIMEOUT, what="ffmpeg mux")
     if proc.returncode != 0:
@@ -419,7 +448,7 @@ def assemble_video(
 
 
 def _stream_has_audio(path: str) -> bool:
-    r = _run(["ffprobe", "-v", "error", "-select_streams", "a",
+    r = _run([FFPROBE, "-v", "error", "-select_streams", "a",
               "-show_entries", "stream=index", "-of", "csv=p=0", path],
              timeout=_PROBE_TIMEOUT, what="ffprobe audio-check")
     return bool(r.stdout.strip())
@@ -460,7 +489,7 @@ def add_cut_clicks(video_path: str, click_path: str, cut_times: List[float],
             parts.append(f"{labels}apad[out]")
         extra = ["-shortest"]
 
-    cmd = ["ffmpeg", "-y", "-i", video_path, "-i", click_path,
+    cmd = [FFMPEG, "-y", "-i", video_path, "-i", click_path,
            "-filter_complex", "".join(parts),
            "-map", "0:v:0", "-map", "[out]",
            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", *extra, out]
@@ -498,7 +527,7 @@ def mix_sfx(video_path: str, sfx_list: List[Dict], output_path: str = None) -> s
     all_labels = [main_audio] + [f"[sfx{i}]" for i in range(len(sfx_list))]
     filt = ";".join(filt_parts) + ";" + "".join(all_labels) + f"amix=inputs={len(all_labels)}:duration=longest:normalize=0[out]"
 
-    cmd = ["ffmpeg", "-y", *inputs, "-filter_complex", filt,
+    cmd = [FFMPEG, "-y", *inputs, "-filter_complex", filt,
            "-map", "0:v:0", "-map", "[out]",
            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
            output_path]

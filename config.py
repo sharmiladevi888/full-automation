@@ -269,6 +269,52 @@ GEMINI_MODELS = [
     "gemini-pro-latest",
 ]
 
+# --- TokenBay (image generation via chat completions — Gemini Flash Image) --
+# TokenBay serves an OpenAI-compatible /v1/chat/completions endpoint.
+# Models like gemini-2.5-flash-image return base64 PNG images inline in the
+# assistant message content (data URL), same pattern as OpenRouter chat-image.
+TOKENBAY_API_KEY = _get("TOKENBAY_API_KEY", "")
+TOKENBAY_BASE_URL = _get("TOKENBAY_BASE_URL", "https://api.tokenbay.com/v1")
+TOKENBAY_MODEL = _get("TOKENBAY_MODEL", "gemini-2.5-flash-image")
+TOKENBAY_TIMEOUT = int(_get("TOKENBAY_TIMEOUT", "600"))
+TOKENBAY_MODELS = [
+    "gemini-2.5-flash-image",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+]
+
+# --- DashScope / Qwen Cloud (Wan 2.7 Image Pro — Alibaba) -------------------
+# DashScope ( Alibaba Cloud's AI service) serves the wan2.7-image-pro model
+# via a multimodal-generation endpoint that returns base64 image(s) in the
+# response.  Supports enable_sequential (multi-image consistency), n (batch
+# count), and size (2K etc).  Get a key at https://dashscope.aliyun.com
+# (Console → API Key).  The intl endpoint is used by default.
+DASHSCOPE_API_KEY = _get("DASHSCOPE_API_KEY", "")
+DASHSCOPE_BASE_URL = _get("DASHSCOPE_BASE_URL",
+                          "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation")
+DASHSCOPE_MODEL = _get("DASHSCOPE_MODEL", "wan2.7-image-pro")
+DASHSCOPE_TIMEOUT = int(_get("DASHSCOPE_TIMEOUT", "600"))
+DASHSCOPE_MODELS = [
+    "wan2.7-image-pro",
+    "wan2.5-image-pro",
+    "wan2.7-image",
+    "wan2.5-image",
+    "qwen-image-2.0-pro",
+    "qwen-image-2.0",
+    "qwen-image-max",
+    "qwen-image-plus",
+]
+# Bulk API keys: comma-separated list of keys that get round-robined to
+# spread rate-limit load across multiple DashScope accounts.  Set in .env as
+# DASHSCOPE_API_KEYS=key1,key2,key3  (also used for derouter/openrouter/tokenbay).
+DASHSCOPE_API_KEYS = [k.strip() for k in _get("DASHSCOPE_API_KEYS", "").split(",") if k.strip()]
+
+# Bulk API keys for other providers (comma-separated, round-robined).
+DEROUTER_API_KEYS = [k.strip() for k in _get("DEROUTER_API_KEYS", "").split(",") if k.strip()]
+OPENROUTER_API_KEYS = [k.strip() for k in _get("OPENROUTER_API_KEYS", "").split(",") if k.strip()]
+TOKENBAY_API_KEYS = [k.strip() for k in _get("TOKENBAY_API_KEYS", "").split(",") if k.strip()]
+PUTER_API_KEYS = [k.strip() for k in _get("PUTER_API_KEYS", "").split(",") if k.strip()]
+
 # --- OpenRouter (alternative image generation via chat completions) ---------
 OPENROUTER_API_KEY = _get("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = _get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
