@@ -8,14 +8,21 @@ cd full-automation
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # add your API keys
-uvicorn app:app --reload --port 8000
+uvicorn ui_patch:app --reload --port 8000
 ```
+
+Use `ui_patch:app` for the normal development server so the runtime session
+expiry/revocation and `/data` auth guard are installed. `app:app` remains the
+bare backend for focused internal debugging only.
 
 ## Docker
 
 ```bash
 docker compose up --build
 ```
+
+The container enables `AUTH_REQUIRED=true` by default because it binds to
+`0.0.0.0`. Create an account through the signup screen before using the app.
 
 ## Tests
 
@@ -43,8 +50,10 @@ Gives you: glassmorphism, cursor glow, ripple clicks, staggered animations, scro
 | File | Purpose |
 |------|--------|
 | `security.py` | Rate limiting, input validation, auth helpers |
+| `runtime_security.py` | Expiring/revocable sessions and auth-gated data serving |
 | `atomic_store.py` | Thread-safe state persistence |
 | `process_manager.py` | Safe subprocess with proper kill |
+| `image_queue.py` | Bounded image generation queue with retention limits |
 | `image_queue_v2.py` | Async image gen with circuit breaker |
 | `api_response.py` | Standardized JSON responses |
 | `logger.py` | Structured logging (JSON or pretty) |
