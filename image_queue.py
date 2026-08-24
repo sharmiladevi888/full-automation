@@ -5,7 +5,7 @@ Why this exists
 The image endpoint (gpt-image via derouter / OpenAI) enforces a tokens-per-
 minute rate limit. Firing a whole batch at once trips `rate_limit_exceeded`
 ("Limit 4000, Used 4000 ...") and occasional `server_error`s. This module is
-the single place that makes image generation reliable:
+ the single place that makes image generation reliable:
 
   * a global THROTTLE — bounded concurrency, minimum spacing between requests,
     and one shared cooldown so a 429 pauses *every* worker (no retry storms);
@@ -580,7 +580,7 @@ class _BatchQueue:
             job.finished = time.time()
             self._persist()
 
-    # -- persistence (no secrets ever written) ---------------------------- #
+    # -- persistence (no secrets ever written) ----------------------------
     _last_persist = 0.0
 
     def _persist(self, throttled=False):
@@ -639,3 +639,72 @@ class _BatchQueue:
 
 
 QUEUE = _BatchQueue()
+
+
+# --------------------------------------------------------------------------- #
+#  Retention and admission guard
+# --------------------------------------------------------------------------- #
+# Queue results are polled by id, so retaining a bounded history is useful, but
+# keeping every completed batch forever turns both process memory and the
+# persisted queue file into an unbounded log. Reject oversized submissions and
+# prune the oldest terminal batches once the configured caps are reached.
+def _queue_int_env(name, default):
+    try:
+        return max(1, int(float(os.environ.get(name, str(default)))))
+    except (TypeError, ValueError):
+        return default
+
+
+_MAX_PROMPTS_PER_BATCH = _queue_int_env("IMAGE_QUEUE_MAX_PROMPTS", 400)
+_MAX_RETAINED_BATCHES = _queue_int_env("IMAGE_QUEUE_MAX_BATCHES", 100)
+_MAX_RETAINED_JOBS = _queue_int_env("IMAGE_QUEUE_MAX_JOBS", 5000)
+
+
+def _prune_terminal_locked(self):
+    """Drop oldest completed/failed/cancelled batches under the retention caps.
+
+    Active batches are never removed. This method must be called with
+    ``self._lock`` held.
+    """
+    def job_count():
+        return sum(len(b.jobs) for b in self._batches.values())
+
+    while (len(self._batches) > _MAX_RETAINED_BATCHES
+           or job_count() > _MAX_RETAINED_JOBS):
+        candidates = [b for b in self._batches.values() if b.is_done()]
+        if not candidates:
+            break
+        victim = min(candidates, key=lambda b: (b.created, b.id))
+        self._batches.pop(victim.id, None)
+        self._settings.pop(victim.id, None)
+        for job in victim.jobs:
+            self._jobs.pop(job.id, None)
+            try:
+                self._pending.remove(job.id)
+            except ValueError:
+                pass
+
+
+_ORIGINAL_SUBMIT = _BatchQueue.submit
+_ORIGINAL_PERSIST = _BatchQueue._persist
+
+
+def _bounded_submit(self, prompts, params, settings, project_id, metas=None):
+    if len(prompts) > _MAX_PROMPTS_PER_BATCH:
+        raise ValueError(
+            f"Too many prompts in one image batch ({len(prompts)}); "
+            f"maximum is {_MAX_PROMPTS_PER_BATCH}.")
+    return _ORIGINAL_SUBMIT(self, prompts, params, settings, project_id, metas)
+
+
+def _bounded_persist(self, throttled=False):
+    # Persist under the same lock used by queue mutation so worker callbacks and
+    # status reads cannot serialize a partially-mutated batch dictionary.
+    with self._lock:
+        _prune_terminal_locked(self)
+        return _ORIGINAL_PERSIST(self, throttled=throttled)
+
+
+_BatchQueue._prune_terminal_locked = _prune_terminal_locked
+_BatchQueue.submit = _bounded_submit
+_BatchQueue._persist = _bounded_persist
