@@ -45,7 +45,7 @@ DIFFUSERS_MODELS = [
 _MODEL_INDEX = {m["id"]: m for m in DIFFUSERS_MODELS}
 DEFAULT_MODEL_ID = "sdxl-turbo"
 
-# Where downloaded model weights live (gitignored). Same convention as
+# Where downloaded model weights are cached (gitignored). Same convention as
 # Piper's voice cache.
 DIFFUSERS_CACHE_DIR = os.environ.get(
     "DIFFUSERS_CACHE_DIR", ""
@@ -97,8 +97,12 @@ def diffusers_install_hint() -> str:
 
 
 def _get_pipe(model_id: str):
-    """Lazy-load (and cache) a StableDiffusion pipeline. Downloads the model
-    on first call."""
+    """Lazy-load (and cache) a Stable Diffusion or FLUX pipeline.
+
+    FLUX repositories use ``FluxPipeline`` rather than one of the Stable
+    Diffusion pipeline classes. Selecting the old class makes
+    ``FLUX.1-schnell`` fail while loading its model config.
+    """
     if model_id in _pipe_cache:
         return _pipe_cache[model_id]
     if not diffusers_available():
@@ -117,19 +121,33 @@ def _get_pipe(model_id: str):
     os.environ["HF_HOME"] = cache_dir
     os.environ.setdefault("HUGGINGFACE_HUB_CACHE", cache_dir)
 
-    # sdxl-turbo uses a single-step variant of the SDXL pipeline; we still
-    # load via StableDiffusionXLPipeline because it has the same API.
-    is_sdxl = "xl" in hf_repo.lower() or "sdxl" in hf_repo.lower()
-    pipe_cls = StableDiffusionXLPipeline if is_sdxl else StableDiffusionPipeline
+    is_flux = "flux" in hf_repo.lower()
+    if is_flux:
+        try:
+            from diffusers import FluxPipeline
+        except ImportError as e:
+            raise RuntimeError(
+                "This diffusers version does not include FluxPipeline. "
+                "Upgrade with: pip install -U diffusers") from e
+        pipe_cls = FluxPipeline
+    else:
+        # sdxl-turbo uses a single-step variant of the SDXL pipeline; we still
+        # load via StableDiffusionXLPipeline because it has the same API.
+        is_sdxl = "xl" in hf_repo.lower() or "sdxl" in hf_repo.lower()
+        pipe_cls = StableDiffusionXLPipeline if is_sdxl else StableDiffusionPipeline
+
+    load_kwargs = {
+        "torch_dtype": dtype,
+        "cache_dir": cache_dir,
+        "use_safetensors": True,
+    }
+    # The SDXL repos publish fp16 variants; FLUX.1-schnell is loaded through
+    # its native FluxPipeline without the SDXL-only ``variant`` argument.
+    if not is_flux:
+        load_kwargs["variant"] = dtype_str
 
     t0 = time.time()
-    pipe = pipe_cls.from_pretrained(
-        hf_repo,
-        torch_dtype=dtype,
-        cache_dir=cache_dir,
-        variant=dtype_str,
-        use_safetensors=True,
-    )
+    pipe = pipe_cls.from_pretrained(hf_repo, **load_kwargs)
     if use_cuda:
         try:
             pipe = pipe.to("cuda")
