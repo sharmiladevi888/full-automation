@@ -11,6 +11,9 @@ COPY . .
 RUN mkdir -p data/uploads data/characters data/images data/frames data/audio data/videos
 RUN useradd -m -r appuser && chown -R appuser:appuser /app
 USER appuser
+# Containers bind to 0.0.0.0 for port publishing, so require the app's
+# authentication gate unless an operator explicitly overrides it.
+ENV AUTH_REQUIRED=true
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/api/health', timeout=5)" || exit 1
 EXPOSE 8000
