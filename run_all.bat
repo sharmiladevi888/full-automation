@@ -37,4 +37,5 @@ echo Continuity Studio (June 6)  -^> http://localhost:8010
 echo 9Router                     -^> http://localhost:20128
 echo (Ctrl+C to stop)
 echo.
-python -m uvicorn app:app --port 8000
+REM ui_patch installs the runtime auth/data hardening layer before serving.
+python -m uvicorn ui_patch:app --port 8000

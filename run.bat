@@ -14,7 +14,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo Continuity Studio -> http://localhost:8000
+echo Continuity Studio -^> http://localhost:8000
 echo (Ctrl+C to stop)
 echo.
-python -m uvicorn app:app --port 8000
+REM ui_patch installs the runtime auth/data hardening layer before serving.
+python -m uvicorn ui_patch:app --port 8000

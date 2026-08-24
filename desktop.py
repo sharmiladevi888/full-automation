@@ -132,7 +132,8 @@ def _run_server(port):
     try:
         import uvicorn
         # Import AFTER env is prepared so DATA_DIR / CS_CONFIG_DIR take effect.
-        import app as _app
+        # ui_patch also installs the runtime auth/data hardening layer.
+        import ui_patch as _app
         uvicorn.run(_app.app, host="127.0.0.1", port=port, log_level="warning")
     except Exception as exc:
         # Server crashed — write to a log file so the user (and support) can
