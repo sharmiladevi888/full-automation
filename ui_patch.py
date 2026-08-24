@@ -8,7 +8,7 @@ Why this exists:
   into the served HTML on the fly, right before </head>.
 
 How to use:
-  Instead of:  uvicorn app:app --port 8000
+  Instead of: uvicorn app:app --port 8000
   Run:         uvicorn ui_patch:app --port 8000
 
   (Docker CMD and desktop launcher can be pointed at ui_patch:app too.)
@@ -23,6 +23,12 @@ from starlette.responses import Response
 
 # Import the existing app untouched
 from app import app
+import app as _app_module
+from runtime_security import install as _install_runtime_security
+
+# Install session expiry/revocation and prevent the /data StaticFiles mount from
+# bypassing authentication when AUTH_REQUIRED=true.
+_install_runtime_security(_app_module)
 
 # The tags to inject. animations.css MUST come before ui_extras.css so the
 # @import font rule in ui_extras loads, and enhancements.js runs after paint.
