@@ -7,10 +7,11 @@ Layout:
       project.json         <- legacy single-project state (auto-migrated on init)
       images/ characters/ frames/ uploads/ audio/ videos/   <- shared media
 
-Media files carry unique ids and are referenced by /data/... URLs, so they are
+Media files carry unique ids and are referenced by /data/... URLs, so they're
 shared across projects safely; switching a project only swaps which state file
 is active.
 """
+import html
 import json
 import os
 import threading
@@ -262,11 +263,15 @@ def switch_project(pid):
 
 
 def rename_project(pid, name):
+    # Project names are rendered by the UI with innerHTML. Escape at the
+    # persistence boundary as defense in depth; creation already sanitizes in
+    # app.py, while this protects the rename endpoint as well.
+    safe_name = html.escape((name or "").strip()[:80], quote=True)
     with _INDEX_LOCK:
         idx = _read_index()
         for p in idx.get("projects", []):
             if p["id"] == pid:
-                p["name"] = (name or "").strip()[:80] or p["name"]
+                p["name"] = safe_name or p["name"]
                 p["updated"] = now()
         _write_index(idx)
 
