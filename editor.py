@@ -93,15 +93,15 @@ def trim_silence(input_path: str, output_path: str = None,
     open on a soft, slow-attack consonant or breath whose amplitude ramps up
     gradually; an aggressive start-trim (silenceremove start_periods=1) bites
     into that onset and the first WORD of every scene comes back clipped —
-    exactly the "cut initial lines" symptom. We now keep the natural head of
-    the clip and only strip dead air from the TAIL (which never carries
-    speech) plus add the lead cushion. Pass ``trim_start=True`` only for a
-    source you know has a long hard-silent intro.
+    exactly the "cut initial lines" symptom. We now keep the natural head of the
+    clip and only strip dead air from the TAIL (which never carries speech) plus
+    add the lead cushion. Pass ``trim_start=True`` only for a source you know
+    has a long hard-silent intro.
 
     Threshold defaults to -50 dB (only TRUE silence, not low-amplitude soft
-    consonants like S/F/H/Th) and the minimum silence window is 300 ms so
-    we don't chop within natural sentence pauses. Loudness/clarity of the
-    speech itself is preserved; we ONLY remove dead air at the edges.
+    consonants like S/F/H/Th) and the minimum silence window is 300 ms so we
+    don't chop within natural sentence pauses. Loudness/clarity of the speech
+    itself is preserved; we ONLY remove dead air at the edges.
     """
     out = output_path or (input_path + ".trimmed.mp3")
     pad_s = max(0.0, float(lead_pad_ms or 0)) / 1000.0
@@ -395,8 +395,7 @@ def assemble_video(
                "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                "-shortest", output_path]
     elif has_music:
-        cmd = ["ffmpeg", "-y",
-               "-i", silent_video, "-stream_loop", "-1", "-i", music_path,
+        cmd = ["ffmpeg", "-y", "-i", silent_video, "-stream_loop", "-1", "-i", music_path,
                "-filter_complex", f"[1:a]volume={mv}[a]",
                "-map", "0:v:0", "-map", "[a]",
                "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
@@ -506,3 +505,68 @@ def mix_sfx(video_path: str, sfx_list: List[Dict], output_path: str = None) -> s
     if proc.returncode != 0:
         raise RuntimeError(f"sfx mix failed: {proc.stderr[-500:]}")
     return output_path
+
+
+# --------------------------------------------------------------------------- #
+#  Failure-path cleanup wrappers
+# --------------------------------------------------------------------------- #
+# The original render functions clean up on their success path only. These
+# wrappers track the unique temp directories created by each call and remove
+# them in finally blocks as well, without deleting another active render.
+import shutil as _shutil
+import threading as _threading
+
+_RENDER_CLEANUP_LOCK = _threading.RLock()
+
+
+def _temp_dirs(root, prefix):
+    root = os.path.abspath(root or ".")
+    try:
+        return {
+            os.path.join(root, name)
+            for name in os.listdir(root)
+            if name.startswith(prefix)
+            and os.path.isdir(os.path.join(root, name))
+        }
+    except OSError:
+        return set()
+
+
+def _cleanup_new_temp_dirs(root, prefix, before):
+    for path in _temp_dirs(root, prefix) - before:
+        _shutil.rmtree(path, ignore_errors=True)
+
+
+_original_assemble_video = assemble_video
+
+
+def assemble_video(*args, **kwargs):
+    output_path = kwargs.get("output_path")
+    if output_path is None and len(args) >= 3:
+        output_path = args[2]
+    root = os.path.dirname(os.path.abspath(output_path or ".")) or "."
+    with _RENDER_CLEANUP_LOCK:
+        before = _temp_dirs(root, "_assemble_")
+        try:
+            return _original_assemble_video(*args, **kwargs)
+        finally:
+            _cleanup_new_temp_dirs(root, "_assemble_", before)
+
+
+_original_bookend_video = bookend_video
+
+
+def bookend_video(*args, **kwargs):
+    out_path = kwargs.get("out_path")
+    if out_path is None and len(args) >= 2:
+        out_path = args[1]
+    root = os.path.dirname(os.path.abspath(out_path or ".")) or "."
+    tmp = os.path.join(root, "_bk_tmp")
+    with _RENDER_CLEANUP_LOCK:
+        # This is a dedicated scratch directory, so clear any stale copy before
+        # starting and always remove it after both success and failure.
+        _shutil.rmtree(tmp, ignore_errors=True)
+        try:
+            return _original_bookend_video(*args, **kwargs)
+        finally:
+            _shutil.rmtree(tmp, ignore_errors=True)
