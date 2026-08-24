@@ -37,7 +37,11 @@ def _verify_session(secret: bytes, token: str) -> Optional[str]:
     if not token or "." not in token or token in _REVOKED_SESSIONS:
         return None
     payload, sig = token.rsplit(".", 1)
-    expected = hmac.new(secret, payload.encode("ascii"), hashlib.sha256).hexdigest()
+    try:
+        payload_bytes = payload.encode("ascii")
+    except UnicodeEncodeError:
+        return None
+    expected = hmac.new(secret, payload_bytes, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(sig, expected):
         return None
     try:
