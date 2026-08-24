@@ -18,8 +18,10 @@ frames regenerated with new prompts (see the report printed at the end).
 """
 import os
 import re
+import shutil
 import subprocess
 import tempfile
+import threading
 
 import config
 import store
@@ -243,7 +245,7 @@ def _build_audio(voice_path, voice_delay, total_dur, boom_times, out_wav, tmp):
 # --------------------------------------------------------------------------- #
 #  Orchestration
 # --------------------------------------------------------------------------- #
-def run(out_path, use_claude=True, hook_dur=1.6, outro_dur=2.0):
+def _run_punchup(out_path, use_claude=True, hook_dur=1.6, outro_dur=2.0):
     st = store.load_state()
     edits = st.get("edits") or []
     if not edits:
@@ -325,13 +327,43 @@ def run(out_path, use_claude=True, hook_dur=1.6, outro_dur=2.0):
     else:
         _run(["ffmpeg", "-y", "-i", silent, "-c", "copy", out_path])
 
-    import shutil
     shutil.rmtree(tmp, ignore_errors=True)
     return out_path, total_dur, len(scenes), caps
 
 
+# --------------------------------------------------------------------------- #
+#  Failure-path cleanup wrapper
+# --------------------------------------------------------------------------- #
+# Keep the original render implementation intact while ensuring that its
+# unique temp directory is removed when any ffmpeg step raises.
+_PUNCHUP_CLEANUP_LOCK = threading.RLock()
+
+
+def _punchup_temp_dirs(root):
+    root = os.path.abspath(root or ".")
+    try:
+        return {
+            os.path.join(root, name)
+            for name in os.listdir(root)
+            if name.startswith("punchup_")
+            and os.path.isdir(os.path.join(root, name))
+        }
+    except OSError:
+        return set()
+
+
+def run(out_path, use_claude=True, hook_dur=1.6, outro_dur=2.0):
+    root = os.path.dirname(os.path.abspath(out_path or ".")) or "."
+    with _PUNCHUP_CLEANUP_LOCK:
+        before = _punchup_temp_dirs(root)
+        try:
+            return _run_punchup(out_path, use_claude, hook_dur, outro_dur)
+        finally:
+            for path in _punchup_temp_dirs(root) - before:
+                shutil.rmtree(path, ignore_errors=True)
+
+
 if __name__ == "__main__":
-    import sys
     outp = sys.argv[1] if len(sys.argv) > 1 else "punchup_out.mp4"
     use_claude = "--no-claude" not in sys.argv
     path, dur, n, caps = run(outp, use_claude=use_claude)
