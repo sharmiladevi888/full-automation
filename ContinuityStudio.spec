@@ -28,7 +28,7 @@ hidden += [
     "app", "config", "store", "pipeline", "editor", "derouter",
     "claude_client", "vault_crypto", "voice", "audio_gen", "youtube",
     "transcribe", "image_queue", "video", "pollinations", "diffusers",
-    "gen_with_refs", "punchup", "nowindow",
+    "gen_with_refs", "punchup", "nowindow", "runtime_security", "ui_patch",
 ]
 
 datas = [
@@ -61,7 +61,7 @@ a = Analysis(
 
 # Strip sensitive / user-specific files that should NOT be bundled into the
 # installer.  Each user's vault.json / users.json / codes.json / .secret is
-# created at first run in %LOCALAPPDATA%\ContinuityStudio\.  Bundling a
+# created at first run in %LOCALAPPDATA%\\ContinuityStudio\\.  Bundling a
 # dev-machine copy would cause encryption-key mismatch errors on install.
 _strip = {"vault.json", "users.json", "codes.json", ".secret"}
 a.datas = [t for t in a.datas if os.path.basename(t[0]) not in _strip]
