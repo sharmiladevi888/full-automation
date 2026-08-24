@@ -1,0 +1,75 @@
+/* ============================================================
+   UI EXTRAS — Fonts + Mobile Responsiveness + A11y
+   Loaded alongside animations.css via ui_patch.py
+   ============================================================ */
+
+/* === FIX #1: FONTS (were referenced but never loaded) === */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* === FIX #2: MOBILE RESPONSIVENESS === */
+@media (max-width: 768px) {
+  header {
+    padding: 12px 16px !important;
+    gap: 12px !important;
+    flex-wrap: wrap;
+  }
+  .wordmark { font-size: 17px !important; }
+  nav.tabs {
+    padding: 12px 16px 0 !important;
+    gap: 2px !important;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 10px 14px !important; white-space: nowrap; flex: none; }
+  main { padding: 0 16px 60px !important; }
+  .sheet { padding: 18px !important; border-radius: 14px !important; }
+
+  /* Storyboard shots stack vertically on mobile */
+  .shot { grid-template-columns: 1fr !important; }
+  .shot .img { min-height: 200px !important; }
+
+  /* Two-column layouts collapse */
+  .twocol { grid-template-columns: 1fr !important; }
+  .rv-body { grid-template-columns: 1fr !important; }
+
+  /* Rows stack */
+  .row { flex-direction: column !important; gap: 14px !important; }
+  .grow { min-width: 100% !important; }
+
+  /* Tighter grids */
+  .frames { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; }
+  .chars { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
+
+  h2.section { font-size: 22px !important; }
+  .modal { padding: 20px !important; }
+
+  /* Bigger tap targets */
+  .btn { padding: 14px 20px !important; min-height: 44px; }
+  .ghost-btn { min-height: 40px; }
+}
+
+@media (max-width: 480px) {
+  .frames { grid-template-columns: repeat(2, 1fr) !important; }
+  .chars { grid-template-columns: 1fr !important; }
+  .wordmark small { display: none; }
+  #toasts { left: 16px; right: 16px; transform: none; }
+  .toast { width: 100%; }
+}
+
+/* === FIX #3: ACCESSIBILITY — keyboard focus rings === */
+.tab:focus-visible,
+.btn:focus-visible,
+.ghost-btn:focus-visible,
+.chip:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--amber, #ff8530);
+  outline-offset: 2px;
+}
+a:focus-visible {
+  outline: 2px solid var(--amber, #ff8530);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

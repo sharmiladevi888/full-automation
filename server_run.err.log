@@ -1,8 +1,0 @@
-INFO:     Started server process [60300]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-C:\Users\sickv\AppData\Roaming\Python\Python312\site-packages\fastapi\openapi\utils.py:252: UserWarning: Duplicate Operation ID api_analyse_scene_api_analyse_scene_post for function api_analyse_scene at E:\time now\continuity-studio\continuity-studio\app.py
-  warnings.warn(message, stacklevel=1)
-C:\Users\sickv\AppData\Roaming\Python\Python312\site-packages\fastapi\openapi\utils.py:252: UserWarning: Duplicate Operation ID api_prompts_from_video_api_prompts_from_video_post for function api_prompts_from_video at E:\time now\continuity-studio\continuity-studio\app.py
-  warnings.warn(message, stacklevel=1)

@@ -1,6 +1,0 @@
-{
-  "name": "continuity-studio-claude-edit",
-  "description": "Continuity Studio — working Claude edit build for local/public testing",
-  "private": false,
-  "auto_init": false
-}

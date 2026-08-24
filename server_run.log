@@ -1,207 +1,0 @@
-INFO:     Started server process [26100]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:61366 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63047 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63047 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63048 - "GET /api/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63048 - "GET /api/projects HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63047 - "GET /data/frames/vid_636335a033_0001.png HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:63051 - "GET /data/frames/vid_636335a033_0005.png HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:63052 - "GET /data/frames/vid_636335a033_0009.png HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:63052 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:63075 - "GET /api/google/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63074 - "GET /api/usage HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63121 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63121 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63121 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63121 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63245 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63330 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63330 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63330 - "GET /api/health HTTP/1.1" 200 OK
-[download]   0.0% of   10.24MiB at  291.21KiB/s ETA 00:36[download]   0.0% of   10.24MiB at  602.57KiB/s ETA 00:17[download]   0.1% of   10.24MiB at    1.14MiB/s ETA 00:08[download]   0.1% of   10.24MiB at    2.10MiB/s ETA 00:04[download]   0.3% of   10.24MiB at    4.33MiB/s ETA 00:02[download]   0.6% of   10.24MiB at    2.91MiB/s ETA 00:03[download]   1.2% of   10.24MiB at    2.95MiB/s ETA 00:03[download]   2.4% of   10.24MiB at    4.00MiB/s ETA 00:02[download]   4.9% of   10.24MiB at    5.83MiB/s ETA 00:01[download]   9.8% of   10.24MiB at    8.02MiB/s ETA 00:01[download]  19.5% of   10.24MiB at    8.90MiB/s ETA 00:00[download]  39.0% of   10.24MiB at    9.99MiB/s ETA 00:00[download]  78.1% of   10.24MiB at   10.72MiB/s ETA 00:00[download]  95.9% of   10.24MiB at   10.70MiB/s ETA 00:00[download]  95.9% of   10.24MiB at  249.96KiB/s ETA 00:01[download]  95.9% of   10.24MiB at  749.88KiB/s ETA 00:00[download]  96.0% of   10.24MiB at    1.71MiB/s ETA 00:00[download]  96.1% of   10.24MiB at    2.66MiB/s ETA 00:00[download]  96.2% of   10.24MiB at    5.00MiB/s ETA 00:00[download]  96.5% of   10.24MiB at    2.28MiB/s ETA 00:00[download]  97.1% of   10.24MiB at    2.63MiB/s ETA 00:00[download]  98.3% of   10.24MiB at    3.80MiB/s ETA 00:00[download] 100.0% of   10.24MiB at    4.99MiB/s ETA 00:00[download] 100% of   10.24MiB in 00:00:01 at 8.69MiB/s                                                         [claude] messages.create model=claude-opus-4-8 max_tokens=8000 blocks=13 base=https://agentrouter.org
-INFO:     127.0.0.1:63395 - "POST /api/autopilot/suggest HTTP/1.1" 200 OK
-[autopilot] START target_seconds=10.0 pacing_seconds=1.0 num_characters=1 orientation='landscape'
-[autopilot] style_frames pinned: 3 frames
-[autopilot] World Bible rewritten from reference-video analysis (old bible saved to master_prompt_backup)
-[autopilot] style_notes saved: stick man / stick figure style explainer cartoon, thick black 3px ink marker out
-[autopilot] target: 10 frames (10.0s ÷ 1.0s/frame)
-[claude] messages.stream model=claude-opus-4-8 max_tokens=16000 blocks=1 base=https://agentrouter.org
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-[autopilot] script attempt 1: 10/10 scenes
-[autopilot] final scene count: 10
-[claude] messages.create model=claude-opus-4-8 max_tokens=512 blocks=1 base=https://agentrouter.org
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-[autopilot] cut plan: [0.8, 0.8, 0.8, 0.8, 1.2, 0.8, 0.9, 0.8, 0.9, 2.2]
-[derouter] generate model=gpt-image-2 size=1536x1024 quality=medium prompt_len=2558 base=https://api-direct.derouter.network/openai/v1
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-[derouter] generate ok in 60.8s
-[image_queue] label=generate index=0 model=gpt-image-2 attempt=1 status_code=200 result=ok message=60.8s
-[autopilot] rendering 10 frames (expected=10, pacing=1.0s, dur=10.0s)
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /data/characters/character_a4fd50c185.png HTTP/1.1" 200 OK
-[render] edit (contact-sheet of 4 refs) prompt_len=2665
-[derouter] edit url=https://api-direct.derouter.network/openai/v1/images/edits model=gpt-image-2 size=1536x1024 quality=medium refs=1 mode=image (single) prompt_len=2665
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-[derouter] edit -> HTTP 402 in 6.7s
-[image_queue] label=edit index=0 model=gpt-image-2 attempt=1 status_code=402 kind=fatal result=failed error=image edit failed [HTTP 402] @ https://api-direct.derouter.network/openai/v1/images/edits response: {"error":{"type":"billing_error","message":"Slot reservation failed (wallet-balance). Reduce n or retry later."}}
-[autopilot] frame scene=1 FAILED: Image generation failed: image edit failed [HTTP 402] @ https://api-direct.derouter.network/openai/v1/images/edits response: {"error":{"type":"billing_error","message":"Slot reservation failed (wallet-balance). Reduce n or re
-[autopilot] aborting remaining frames — image account is out of credits or the key is invalid
-[autopilot] video step skipped — no frames in sequence: No frames were rendered (1 failed). Cause: Image generation failed: image edit failed [HTTP 402] @ https://api-direct.derouter.network/openai/v1/images/edits response: {"error":{"type":"billing_error","message":"Slot reservation failed (wallet
-[derouter] generate model=gpt-image-2 size=1536x1024 quality=medium prompt_len=568 base=https://api-direct.derouter.network/openai/v1
-[image_queue] label=generate index=0 model=gpt-image-2 attempt=1 status_code=402 kind=fatal result=failed error=image API error — APIStatusError: Error code: 402 - {'error': {'type': 'billing_error', 'message': 'Slot reservation failed (wallet-balance). Reduce n or retry later.'}} | response: {"error":{"type":"billing_error","message":"Slot reservation failed (wallet-balance). Reduce n or retry later."}}
-[claude] messages.create model=claude-opus-4-8 max_tokens=2000 blocks=1 base=https://agentrouter.org
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63662 - "GET /api/autopilot/progress/run_1781644217643_697ll HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63656 - "POST /api/autopilot HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63656 - "GET /api/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49454 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49454 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49455 - "GET /api/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49454 - "GET /api/projects HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49455 - "GET /data/frames/vid_af6522366b_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49465 - "GET /data/frames/vid_af6522366b_0005.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49466 - "GET /data/frames/vid_af6522366b_0009.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49467 - "GET /data/characters/character_a4fd50c185.png HTTP/1.1" 304 Not Modified
-INFO:     127.0.0.1:49466 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:49494 - "GET /api/google/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49495 - "GET /api/usage HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49535 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49535 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49582 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57353 - "GET /api/voices HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57353 - "GET /api/voices HTTP/1.1" 200 OK
-[download]   0.0% of   10.24MiB at  220.69KiB/s ETA 00:47[download]   0.0% of   10.24MiB at  542.69KiB/s ETA 00:19[download]   0.1% of   10.24MiB at  920.26KiB/s ETA 00:11[download]   0.1% of   10.24MiB at    1.70MiB/s ETA 00:06[download]   0.3% of   10.24MiB at    2.61MiB/s ETA 00:03[download]   0.6% of   10.24MiB at    2.28MiB/s ETA 00:04[download]   1.2% of   10.24MiB at    2.71MiB/s ETA 00:03[download]   2.4% of   10.24MiB at    3.52MiB/s ETA 00:02[download]   4.9% of   10.24MiB at    5.04MiB/s ETA 00:01[download]   9.8% of   10.24MiB at    7.63MiB/s ETA 00:01[download]  19.5% of   10.24MiB at    8.75MiB/s ETA 00:00[download]  39.0% of   10.24MiB at    9.20MiB/s ETA 00:00[download]  78.1% of   10.24MiB at    9.28MiB/s ETA 00:00[download]  94.5% of   10.24MiB at    9.40MiB/s ETA 00:00[download]  94.5% of   10.24MiB at  537.59KiB/s ETA 00:01[download]  94.5% of   10.24MiB at  776.34KiB/s ETA 00:00[download]  94.6% of   10.24MiB at    1.41MiB/s ETA 00:00[download]  94.6% of   10.24MiB at    3.02MiB/s ETA 00:00[download]  94.8% of   10.24MiB at    5.17MiB/s ETA 00:00[download]  95.1% of   10.24MiB at    2.08MiB/s ETA 00:00[download]  95.7% of   10.24MiB at    3.20MiB/s ETA 00:00[download]  96.9% of   10.24MiB at    4.26MiB/s ETA 00:00[download]  99.4% of   10.24MiB at    6.47MiB/s ETA 00:00[download] 100.0% of   10.24MiB at    6.49MiB/s ETA 00:00[download] 100% of   10.24MiB in 00:00:01 at 7.88MiB/s                                                         [claude] messages.create model=claude-opus-4-8 max_tokens=8000 blocks=13 base=https://agentrouter.org
-INFO:     127.0.0.1:57384 - "POST /api/autopilot/suggest HTTP/1.1" 200 OK
-[download]   0.0% of   10.37MiB at  316.26KiB/s ETA 00:33[download]   0.0% of   10.37MiB at  720.46KiB/s ETA 00:14[download]   0.1% of   10.37MiB at    1.64MiB/s ETA 00:06[download]   0.1% of   10.37MiB at    2.84MiB/s ETA 00:03[download]   0.3% of   10.37MiB at    4.22MiB/s ETA 00:02[download]   0.6% of   10.37MiB at    2.40MiB/s ETA 00:04[download]   1.2% of   10.37MiB at    2.81MiB/s ETA 00:03[download]   2.4% of   10.37MiB at    3.90MiB/s ETA 00:02[download]   4.8% of   10.37MiB at    5.68MiB/s ETA 00:01[download]   9.6% of   10.37MiB at    8.45MiB/s ETA 00:01[download]  19.3% of   10.37MiB at    8.26MiB/s ETA 00:01[download]  38.6% of   10.37MiB at   10.69MiB/s ETA 00:00[download]  77.1% of   10.37MiB at   11.05MiB/s ETA 00:00[download]  94.1% of   10.37MiB at   11.16MiB/s ETA 00:00[download]  94.1% of   10.37MiB at  132.86KiB/s ETA 00:04[download]  94.1% of   10.37MiB at  371.80KiB/s ETA 00:01[download]  94.1% of   10.37MiB at  867.54KiB/s ETA 00:00[download]  94.2% of   10.37MiB at    1.62MiB/s ETA 00:00[download]  94.3% of   10.37MiB at    3.35MiB/s ETA 00:00[download]  94.6% of   10.37MiB at    1.77MiB/s ETA 00:00[download]  95.2% of   10.37MiB at    1.98MiB/s ETA 00:00[download]  96.5% of   10.37MiB at    2.79MiB/s ETA 00:00[download]  98.9% of   10.37MiB at    4.39MiB/s ETA 00:00[download] 100.0% of   10.37MiB at    4.99MiB/s ETA 00:00[download] 100% of   10.37MiB in 00:00:01 at 8.63MiB/s                                                         [download]   0.0% of   12.10MiB at  250.56KiB/s ETA 00:49[download]   0.0% of   12.10MiB at  599.59KiB/s ETA 00:20[download]   0.1% of   12.10MiB at    1.37MiB/s ETA 00:08[download]   0.1% of   12.10MiB at    2.93MiB/s ETA 00:04[download]   0.3% of   12.10MiB at    5.04MiB/s ETA 00:02[download]   0.5% of   12.10MiB at    2.94MiB/s ETA 00:04[download]   1.0% of   12.10MiB at    3.10MiB/s ETA 00:03[download]   2.1% of   12.10MiB at    4.20MiB/s ETA 00:02[download]   4.1% of   12.10MiB at    6.50MiB/s ETA 00:01[download]   8.3% of   12.10MiB at    9.15MiB/s ETA 00:01[download]  16.5% of   12.10MiB at    9.61MiB/s ETA 00:01[download]  33.0% of   12.10MiB at   10.93MiB/s ETA 00:00[download]  66.1% of   12.10MiB at   11.41MiB/s ETA 00:00[download]  82.1% of   12.10MiB at   11.43MiB/s ETA 00:00[download]  82.2% of   12.10MiB at  142.35KiB/s ETA 00:15[download]  82.2% of   12.10MiB at  427.06KiB/s ETA 00:05[download]  82.2% of   12.10MiB at  871.74KiB/s ETA 00:02[download]  82.3% of   12.10MiB at    1.82MiB/s ETA 00:01[download]  82.4% of   12.10MiB at    3.77MiB/s ETA 00:00[download]  82.7% of   12.10MiB at    2.54MiB/s ETA 00:00[download]  83.2% of   12.10MiB at    2.64MiB/s ETA 00:00[download]  84.2% of   12.10MiB at    3.63MiB/s ETA 00:00[download]  86.3% of   12.10MiB at    5.51MiB/s ETA 00:00[download]  90.4% of   12.10MiB at    7.99MiB/s ETA 00:00[download]  98.7% of   12.10MiB at    8.40MiB/s ETA 00:00[download] 100.0% of   12.10MiB at    9.04MiB/s ETA 00:00[download] 100% of   12.10MiB in 00:00:01 at 8.93MiB/s                                                         [download]   0.0% of   10.43MiB at  591.75KiB/s ETA 00:18[download]   0.0% of   10.43MiB at    1.73MiB/s ETA 00:06[download]   0.1% of   10.43MiB at    2.52MiB/s ETA 00:04[download]   0.1% of   10.43MiB at    3.95MiB/s ETA 00:02[download]   0.3% of   10.43MiB at    8.15MiB/s ETA 00:01[download]   0.6% of   10.43MiB at    2.21MiB/s ETA 00:04[download]   1.2% of   10.43MiB at    2.46MiB/s ETA 00:04[download]   2.4% of   10.43MiB at    3.66MiB/s ETA 00:02[download]   4.8% of   10.43MiB at    5.53MiB/s ETA 00:01[download]   9.6% of   10.43MiB at    6.07MiB/s ETA 00:01[download]  19.2% of   10.43MiB at    8.98MiB/s ETA 00:00[download]  38.3% of   10.43MiB at    9.49MiB/s ETA 00:00[download]  76.7% of   10.43MiB at    9.64MiB/s ETA 00:00[download]  91.7% of   10.43MiB at    9.67MiB/s ETA 00:00[download]  91.8% of   10.43MiB at  220.02KiB/s ETA 00:04[download]  91.8% of   10.43MiB at  509.33KiB/s ETA 00:01[download]  91.8% of   10.43MiB at    1.04MiB/s ETA 00:00[download]  91.9% of   10.43MiB at    1.93MiB/s ETA 00:00[download]  92.0% of   10.43MiB at    3.15MiB/s ETA 00:00[download]  92.3% of   10.43MiB at    2.84MiB/s ETA 00:00[download]  92.9% of   10.43MiB at    2.58MiB/s ETA 00:00[download]  94.1% of   10.43MiB at    3.52MiB/s ETA 00:00[download]  96.5% of   10.43MiB at    5.30MiB/s ETA 00:00[download] 100.0% of   10.43MiB at    7.20MiB/s ETA 00:00[download] 100% of   10.43MiB in 00:00:01 at 7.91MiB/s                                                         INFO:     127.0.0.1:57780 - "GET /api/voices HTTP/1.1" 200 OK
-[download]   0.0% of   11.17MiB at  Unknown B/s ETA Unknown[download]   0.0% of   11.17MiB at    2.90MiB/s ETA 00:03  [download]   0.1% of   11.17MiB at    6.77MiB/s ETA 00:01[download]   0.1% of   11.17MiB at    7.29MiB/s ETA 00:01[download]   0.3% of   11.17MiB at   15.07MiB/s ETA 00:00[download]   0.6% of   11.17MiB at    2.34MiB/s ETA 00:04[download]   1.1% of   11.17MiB at    2.80MiB/s ETA 00:03[download]   2.2% of   11.17MiB at    3.88MiB/s ETA 00:02[download]   4.5% of   11.17MiB at    5.86MiB/s ETA 00:01[download]   8.9% of   11.17MiB at    6.42MiB/s ETA 00:01[download]  17.9% of   11.17MiB at    9.80MiB/s ETA 00:00[download]  35.8% of   11.17MiB at    9.89MiB/s ETA 00:00[download]  71.6% of   11.17MiB at    9.58MiB/s ETA 00:00[download]  87.7% of   11.17MiB at    9.61MiB/s ETA 00:00[download]  87.8% of   11.17MiB at  983.42KiB/s ETA 00:01[download]  87.8% of   11.17MiB at    1.16MiB/s ETA 00:01[download]  87.8% of   11.17MiB at    2.22MiB/s ETA 00:00[download]  87.9% of   11.17MiB at    4.75MiB/s ETA 00:00[download]  88.0% of   11.17MiB at    7.40MiB/s ETA 00:00[download]  88.3% of   11.17MiB at    3.23MiB/s ETA 00:00[download]  88.9% of   11.17MiB at    3.00MiB/s ETA 00:00[download]  90.0% of   11.17MiB at    3.95MiB/s ETA 00:00[download]  92.2% of   11.17MiB at    5.53MiB/s ETA 00:00[download]  96.7% of   11.17MiB at    8.25MiB/s ETA 00:00[download] 100.0% of   11.17MiB at    8.38MiB/s ETA 00:00[download] 100% of   11.17MiB in 00:00:01 at 8.02MiB/s                                                         [download]   0.0% of   11.77MiB at  281.01KiB/s ETA 00:42[download]   0.0% of   11.77MiB at  658.21KiB/s ETA 00:18[download]   0.1% of   11.77MiB at    1.50MiB/s ETA 00:07[download]   0.1% of   11.77MiB at    2.64MiB/s ETA 00:04[download]   0.3% of   11.77MiB at    5.45MiB/s ETA 00:02[download]   0.5% of   11.77MiB at    2.50MiB/s ETA 00:04[download]   1.1% of   11.77MiB at    2.11MiB/s ETA 00:05[download]   2.1% of   11.77MiB at    2.47MiB/s ETA 00:04[download]   4.2% of   11.77MiB at    3.49MiB/s ETA 00:03[download]   8.5% of   11.77MiB at    5.27MiB/s ETA 00:02[download]  17.0% of   11.77MiB at    6.56MiB/s ETA 00:01[download]  34.0% of   11.77MiB at    8.89MiB/s ETA 00:00[download]  68.0% of   11.77MiB at    9.98MiB/s ETA 00:00[download]  81.2% of   11.77MiB at   10.23MiB/s ETA 00:00[download]  81.2% of   11.77MiB at  Unknown B/s ETA Unknown[download]  81.2% of   11.77MiB at  Unknown B/s ETA Unknown[download]  81.3% of   11.77MiB at    6.79MiB/s ETA 00:00  [download]  81.3% of   11.77MiB at   14.54MiB/s ETA 00:00[download]  81.5% of   11.77MiB at    7.57MiB/s ETA 00:00[download]  81.7% of   11.77MiB at    2.92MiB/s ETA 00:00[download]  82.3% of   11.77MiB at    3.34MiB/s ETA 00:00[download]  83.3% of   11.77MiB at    4.61MiB/s ETA 00:00[download]  85.5% of   11.77MiB at    6.92MiB/s ETA 00:00[download]  89.7% of   11.77MiB at    7.56MiB/s ETA 00:00[download]  98.2% of   11.77MiB at   10.56MiB/s ETA 00:00[download] 100.0% of   11.77MiB at   10.80MiB/s ETA 00:00[download] 100% of   11.77MiB in 00:00:01 at 7.56MiB/s                                                         [download]   0.0% of   10.66MiB at  Unknown B/s ETA Unknown[download]   0.0% of   10.66MiB at    2.92MiB/s ETA 00:03  [download]   0.1% of   10.66MiB at    6.82MiB/s ETA 00:01[download]   0.1% of   10.66MiB at   14.62MiB/s ETA 00:00[download]   0.3% of   10.66MiB at    8.61MiB/s ETA 00:01[download]   0.6% of   10.66MiB at    2.95MiB/s ETA 00:03[download]   1.2% of   10.66MiB at    3.15MiB/s ETA 00:03[download]   2.3% of   10.66MiB at    4.26MiB/s ETA 00:02[download]   4.7% of   10.66MiB at    6.33MiB/s ETA 00:01[download]   9.4% of   10.66MiB at    9.14MiB/s ETA 00:01[download]  18.8% of   10.66MiB at    9.96MiB/s ETA 00:00[download]  37.5% of   10.66MiB at   11.04MiB/s ETA 00:00[download]  75.1% of   10.66MiB at   11.06MiB/s ETA 00:00[download]  92.5% of   10.66MiB at   11.46MiB/s ETA 00:00[download]  92.5% of   10.66MiB at  250.69KiB/s ETA 00:03[download]  92.6% of   10.66MiB at  665.27KiB/s ETA 00:01[download]  92.6% of   10.66MiB at    1.52MiB/s ETA 00:00[download]  92.7% of   10.66MiB at    2.91MiB/s ETA 00:00[download]  92.8% of   10.66MiB at    4.06MiB/s ETA 00:00[download]  93.1% of   10.66MiB at    2.45MiB/s ETA 00:00[download]  93.7% of   10.66MiB at    2.76MiB/s ETA 00:00[download]  94.9% of   10.66MiB at    3.89MiB/s ETA 00:00[download]  97.2% of   10.66MiB at    5.68MiB/s ETA 00:00[download] 100.0% of   10.66MiB at    7.62MiB/s ETA 00:00[download] 100% of   10.66MiB in 00:00:01 at 8.88MiB/s                                                         [claude] messages.create model=claude-opus-4-8 max_tokens=8000 blocks=17 base=https://agentrouter.org
-INFO:     127.0.0.1:57700 - "POST /api/youtube/analyze-multi HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57700 - "GET /data/frames/vid_f6f300d673_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58120 - "GET /data/frames/vid_2fbe8d4d68_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58121 - "GET /data/frames/vid_044093bc31_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58120 - "GET /data/frames/vid_43941d90ea_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58121 - "GET /data/frames/vid_0de52828a2_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57700 - "GET /data/frames/vid_092241cd9d_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58121 - "GET /data/frames/vid_2fbe8d4d68_0002.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57700 - "GET /data/frames/vid_f6f300d673_0002.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58120 - "GET /data/frames/vid_f6f300d673_0003.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57700 - "GET /data/frames/vid_2fbe8d4d68_0003.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58120 - "GET /data/frames/vid_044093bc31_0002.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58121 - "GET /data/frames/vid_044093bc31_0003.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57700 - "GET /data/frames/vid_0de52828a2_0002.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58120 - "GET /data/frames/vid_0de52828a2_0003.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58121 - "GET /data/frames/vid_43941d90ea_0002.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58120 - "GET /data/frames/vid_092241cd9d_0003.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57700 - "GET /data/frames/vid_43941d90ea_0003.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58121 - "GET /data/frames/vid_092241cd9d_0002.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61013 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61013 - "GET /api/auth/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61014 - "GET /api/state HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61014 - "GET /api/projects HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61013 - "GET /data/frames/vid_af6522366b_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61025 - "GET /data/frames/vid_af6522366b_0005.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61026 - "GET /data/frames/vid_af6522366b_0009.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61027 - "GET /data/frames/vid_f6f300d673_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61014 - "GET /data/frames/vid_044093bc31_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61028 - "GET /data/frames/vid_2fbe8d4d68_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61013 - "GET /data/frames/vid_0de52828a2_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61025 - "GET /data/frames/vid_43941d90ea_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61027 - "GET /data/frames/vid_092241cd9d_0001.png HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61027 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:61161 - "GET /api/voices HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61197 - "POST /api/autopilot/suggest HTTP/1.1" 422 Unprocessable Entity
-INFO:     127.0.0.1:61197 - "POST /api/autopilot/suggest HTTP/1.1" 422 Unprocessable Entity
-INFO:     127.0.0.1:61197 - "GET /api/google/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61203 - "GET /api/usage HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61203 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61203 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61239 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61239 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61239 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61239 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61312 - "POST /api/autopilot/suggest HTTP/1.1" 422 Unprocessable Entity
-INFO:     127.0.0.1:61312 - "POST /api/autopilot/suggest HTTP/1.1" 422 Unprocessable Entity
-INFO:     127.0.0.1:61312 - "POST /api/autopilot/suggest HTTP/1.1" 422 Unprocessable Entity
-INFO:     127.0.0.1:61239 - "GET /api/health HTTP/1.1" 200 OK

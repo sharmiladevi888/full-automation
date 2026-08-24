@@ -240,10 +240,10 @@ class CharacterUploadIn(BaseModel):
 @app.post("/api/characters/upload")
 async def api_upload_character(c: CharacterUploadIn, file: UploadFile = File(...)):
     contents = await file.read()
-    ext = os.path.splitext(file.filename or "sheet.png")[1]
-    path = store.write_bytes(os.path.join("characters", c.name), contents, ext=ext)
+    ext = os.path.splitext(file.filename or "sheet.png")[1].lstrip(".") or "png"
+    sheet_url, _ = store.write_binary("characters", contents, ext=ext, name_hint=file.filename or c.file_name or c.name or "sheet")
     st = store.load_state()
-    rec = {"id": store.new_id("char"), "name": c.name, "description": c.description, "sheet_url": path, "source": "upload", "created": store.now()}
+    rec = {"id": store.new_id("char"), "name": c.name, "description": c.description, "sheet_url": sheet_url, "source": "upload", "created": store.now()}
     st["characters"].append(rec)
     store.save_state(st)
     return rec

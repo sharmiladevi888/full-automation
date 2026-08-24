@@ -31,6 +31,7 @@ _SENSITIVE_KEYS = {
     "agentrouter_api_key",
     "deepgram_api_key",   # TTS provider — fixed 2026-06-22 (was missing)
     "deepgram_secret",
+    "puter_api_key",      # Image provider token — fixed 2026-08-24
 }
 _ENC_PREFIX = "enc::"
 _SECRET_PATH = os.path.join(config.DATA_DIR, ".secret")
@@ -163,8 +164,8 @@ def _nuke_and_recover():
     failures indicate the encryption key is irrecoverably mismatched."""
     global _fernet, _fallback
     print(f"[vault] {_decrypt_failures} keys failed to decrypt — encryption key "
-          "mismatch detected. Regenerating vault (you'll re-enter API keys in "
-          "Settings).", flush=True)
+          f"mismatch detected. Regenerating vault (you'll re-enter API keys in "
+          f"Settings).", flush=True)
     try:
         if os.path.exists(_SECRET_PATH):
             os.remove(_SECRET_PATH)

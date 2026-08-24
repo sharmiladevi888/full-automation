@@ -1,55 +1,79 @@
-# Secrets — NEVER commit the real key. Use .env.example as the template.
-.env
+# Agent 6: DevOps - Comprehensive gitignore
 
-# Generated project assets + state (large, user-specific, not source).
-data/
-
-# Python
+# === Python ===
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
 *.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# === Virtual Environments ===
 .venv/
 venv/
 env/
+ENV/
 
-# OS / editor cruft
-.DS_Store
-Thumbs.db
+# === IDE ===
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
 
-# Throwaway verification scratch files
-_verify*.py
-_verify*.txt
-_verify*.png
-_run.log
-_live_server.log
-__pycache__/
-*.pyc
-
-# User vault — contains per-user API keys, NEVER commit
+# === Environment & Secrets ===
+.env
+.env.local
+.env.production
+.env.*.local
 vault.json
-vault.json.bak*
 users.json
 codes.json
 
-# --- Windows app build artifacts (large, regenerable) ---
-build/
-dist/
-*.spec.bak
-ffmpeg_bin/
-# installer_output/ is NOT gitignored — the final Setup.exe is pushed (user-requested).
-# *.exe is NOT gitignored — same reason; the source *.exe artifacts in dist/ stay gitignored via the dist/ line above.
+# === Data & Generated Assets ===
+data/
+uploads/
+*.sqlite
+*.db
 
-# NEVER commit the bare PyInstaller bootloader at repo root. It is a one-folder
-# build stub that REQUIRES its sibling _internal\ folder (gitignored via dist/).
-# Shipping it alone makes every user hit:
-#   "Failed to load Python DLL ...\_internal\python312.dll — module not found".
-# End users must run the installer (installer_output\ContinuityStudio-Setup.exe).
-/ContinuityStudio.exe
+# === Logs ===
+*.log
+logs/
 
+# === Backup & Temp Files ===
+*.bak
+*.bak_*
+*.gate
+*.previous_gate
+*.tmp
+*.temp
+*_response.json
 
-# local test artifacts
-_local*.log
-_uvicorn*.log
-_t_cfg.py
+# === Build Artifacts ===
+installer_output/
+installer_payload/
+*.spec
+*.exe
+*.msi
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# === Docker ===
+.docker/
+
+# === Test ===
+.coverage
+htmlcov/
+.pytest_cache/
+
+# === Piper TTS Models (large binary) ===
+piper_models/
