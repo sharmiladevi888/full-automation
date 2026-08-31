@@ -7,7 +7,6 @@ stale as providers add/remove models.
 import hashlib
 import threading
 import time
-from urllib.parse import urlsplit
 
 import requests
 
