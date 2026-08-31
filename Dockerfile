@@ -19,4 +19,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 8000
 # Serve via ui_patch:app so the pro UI (fonts + animations + mobile) is injected.
 # Falls back to plain app:app if you prefer the bare UI.
-CMD ["uvicorn", "ui_patch:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# The queue and session revocation store are process-local, so keep one worker.
+CMD ["uvicorn", "ui_patch:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
