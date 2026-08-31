@@ -19,6 +19,8 @@ import store
 import editor
 from derouter import ImageClient
 from claude_client import ClaudeClient
+from security import (ALLOWED_IMAGE_MIMES, ALLOWED_VIDEO_MIMES,
+                      validate_upload)
 
 
 class AnalyseIn(BaseModel):
@@ -68,6 +70,13 @@ def get_voice_client(voice_id: str = None):
         model=s["elevenlabs_model"],
         voice_id=voice_id or s["elevenlabs_voice_id"],
     )
+
+
+def _check_upload(file: UploadFile, allowed):
+    ok, message = validate_upload(
+        file.filename or "", file.content_type or "", allowed)
+    if not ok:
+        raise HTTPException(415, message)
 
 
 @app.post("/api/analyse-scene")
@@ -134,6 +143,7 @@ def api_master(m: MasterIn):
 
 @app.post("/api/video")
 async def api_video(file: UploadFile = File(...), fps: float = Form(1.0), max_frames: int = Form(40)):
+    _check_upload(file, ALLOWED_VIDEO_MIMES)
     import video as videomod
     _fn = os.path.basename((file.filename or "video.mp4").replace("..", "")) or "video.mp4"
     dest = os.path.join(store.UPLOADS_DIR, store.new_id("upload") + "_" + _fn)
@@ -160,6 +170,7 @@ def api_style_frames(s: StyleFramesIn):
 
 @app.post("/api/scene-detect")
 async def api_scene_detect(file: UploadFile = File(...), threshold: float = Form(0.4)):
+    _check_upload(file, ALLOWED_VIDEO_MIMES)
     _fn = os.path.basename((file.filename or "video.mp4").replace("..", "")) or "video.mp4"
     dest = os.path.join(store.UPLOADS_DIR, store.new_id("scene") + "_" + _fn)
     with open(dest, "wb") as f:
@@ -212,7 +223,6 @@ class CharacterBatchIn(BaseModel):
 
 @app.post("/api/characters/batch")
 def api_create_characters_batch(b: CharacterBatchIn):
-    # reusing the same logic as the private app but without per-user auth context
     entries = pipeline.parse_character_batch(b.text)
     if not entries:
         raise HTTPException(400, "no character entries found (separate with blank lines)")
@@ -248,6 +258,7 @@ class CharacterUploadIn(BaseModel):
 
 @app.post("/api/characters/upload")
 async def api_upload_character(c: CharacterUploadIn, file: UploadFile = File(...)):
+    _check_upload(file, ALLOWED_IMAGE_MIMES)
     contents = await file.read()
     ext = os.path.splitext(file.filename or "sheet.png")[1].lstrip(".") or "png"
     sheet_url, _ = store.write_binary("characters", contents, ext=ext, name_hint=file.filename or c.file_name or c.name or "sheet")
