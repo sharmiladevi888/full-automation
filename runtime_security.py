@@ -3,6 +3,7 @@
 The wrapper installs this module after importing app.py, which lets us harden
 legacy route functions without duplicating the large application module.
 """
+import asyncio
 import base64
 import hashlib
 import hmac
@@ -33,9 +34,6 @@ except (TypeError, ValueError):
 _REVOKED_PATH = os.path.join(config.DATA_DIR, "revoked_sessions.json")
 _REVOKED_LOCK = threading.RLock()
 _AUTH_FILE_LOCK = threading.RLock()
-# Store only SHA-256 digests of tokens on disk; raw bearer tokens never enter
-# the revocation file. Values are expiry timestamps so the set is bounded over
-# time as well as by count.
 _REVOKED_SESSIONS = {}
 
 
@@ -108,8 +106,6 @@ def _load_revoked_sessions():
                     except (TypeError, ValueError):
                         continue
         elif isinstance(raw, list):
-            # Migrate a possible old list-of-raw-tokens file without keeping
-            # those tokens in memory or on disk after the next write.
             for token in raw:
                 if token:
                     _REVOKED_SESSIONS[_token_digest(token)] = now + _SESSION_TTL_SECONDS
@@ -251,8 +247,6 @@ def _install_safe_app_hooks(app_module):
         app_module.load_vault = safe_load_vault
         app_module._bugwatch_safe_vault = True
 
-    # Keep auth/config JSON reads fail-closed and writes atomic. This is also
-    # used by load_vault's migration path through the app module globals.
     if store is not None and not getattr(app_module, "_bugwatch_atomic_auth_files", False):
         def _config_path(name):
             return os.path.join(app_module._config_dir(), name)
@@ -277,8 +271,8 @@ def _install_safe_app_hooks(app_module):
         def _safe_save_vault(value):
             import vault_crypto
             with _AUTH_FILE_LOCK:
-                _atomic = getattr(store, "_atomic_write_json")
-                _atomic(_config_path("vault.json"), vault_crypto.encrypt_vault(value))
+                store._atomic_write_json(
+                    _config_path("vault.json"), vault_crypto.encrypt_vault(value))
 
         app_module.save_vault = _safe_save_vault
         app_module._bugwatch_atomic_auth_files = True
@@ -295,8 +289,6 @@ def _install_safe_app_hooks(app_module):
         app_module._run_capture = safe_capture
         app_module._bugwatch_safe_capture = True
 
-    # Route the remaining ffmpeg wrappers through the same process-tree-aware
-    # runner. Their callers already expect CompletedProcess-like fields.
     try:
         import process_manager
         import editor
@@ -326,9 +318,6 @@ def _install_safe_app_hooks(app_module):
     except Exception:
         pass
 
-    # Audio Studio uses config.DATA_DIR directly in its helper. Replace that
-    # helper after app import so generated clips follow the same tenant root as
-    # project state and their returned URLs remain accessible to that tenant.
     try:
         import audio_gen
         import store
@@ -391,6 +380,38 @@ def _install_api_error_handlers(app_module):
         app_module._bugwatch_api_errors = True
     except Exception:
         pass
+
+
+async def _inject_live_catalogs(request, response):
+    if response.status_code >= 400:
+        return response
+    ctype = response.headers.get("content-type", "")
+    if "json" not in ctype:
+        return response
+    body = b""
+    async for chunk in response.body_iterator:
+        body += chunk
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError, TypeError):
+        return StarletteResponse(
+            content=body, status_code=response.status_code,
+            headers={k: v for k, v in response.headers.items()
+                     if k.lower() != "content-length"},
+            media_type=ctype.split(";", 1)[0] or "application/json")
+    if isinstance(payload, dict) and isinstance(payload.get("config"), dict):
+        try:
+            import model_catalog
+            settings = getattr(request.state, "settings", {}) or {}
+            catalogs = await asyncio.to_thread(
+                model_catalog.catalogs_for_settings, settings)
+            payload["config"].update(catalogs)
+        except Exception:
+            pass
+    headers = {k: v for k, v in response.headers.items()
+               if k.lower() not in {"content-length", "content-type"}}
+    return JSONResponse(content=payload, status_code=response.status_code,
+                        headers=headers)
 
 
 def _install_queue_scope(app_module):
@@ -519,6 +540,8 @@ class RuntimeSecurityMiddleware(BaseHTTPMiddleware):
             response = await self._call_scoped(request, call_next, email)
         except Exception:
             raise
+        if path == "/api/state":
+            response = await _inject_live_catalogs(request, response)
         if limiter is not None and response.status_code < 400:
             limiter.reset(client_ip)
         return response
