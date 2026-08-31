@@ -14,6 +14,7 @@ the single visual reference, so the feature always returns *something* usable.
 import os
 import re
 import sys
+from urllib.parse import parse_qs, urlsplit
 
 import requests
 
@@ -29,29 +30,54 @@ def _log(msg):
 #  URL parsing
 # --------------------------------------------------------------------------- #
 _ID_RE = re.compile(r"[0-9A-Za-z_-]{11}")
+_YOUTUBE_HOSTS = {
+    "youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com",
+    "youtu.be", "www.youtu.be", "youtube-nocookie.com", "www.youtube-nocookie.com",
+}
+
+
+def _youtube_parts(url: str):
+    """Return parsed parts only for an actual HTTPS/HTTP YouTube host."""
+    try:
+        parts = urlsplit((url or "").strip())
+        host = (parts.hostname or "").lower().rstrip(".")
+        if parts.scheme not in ("http", "https") or not host:
+            return None
+        # Userinfo is not part of a legitimate YouTube link and can make
+        # otherwise confusing URLs appear to target a trusted host.
+        if parts.username is not None or parts.password is not None:
+            return None
+        if host not in _YOUTUBE_HOSTS:
+            return None
+        return parts
+    except ValueError:
+        return None
+
+
+def _is_youtube_host(url: str) -> bool:
+    return _youtube_parts(url) is not None
 
 
 def extract_video_id(url: str):
-    """Pull the 11-char video id out of any common YouTube URL form."""
+    """Pull the 11-char video id from a real YouTube URL or a bare id."""
     if not url:
         return None
     url = url.strip()
-    # youtu.be/<id>
-    m = re.search(r"youtu\.be/([0-9A-Za-z_-]{11})", url)
-    if m:
-        return m.group(1)
-    # watch?v=<id>
-    m = re.search(r"[?&]v=([0-9A-Za-z_-]{11})", url)
-    if m:
-        return m.group(1)
-    # /shorts/<id>  /embed/<id>  /live/<id>
-    m = re.search(r"/(?:shorts|embed|live|v)/([0-9A-Za-z_-]{11})", url)
-    if m:
-        return m.group(1)
-    # bare id
     if _ID_RE.fullmatch(url):
         return url
-    return None
+    parts = _youtube_parts(url)
+    if parts is None:
+        return None
+    host = (parts.hostname or "").lower().rstrip(".")
+    if host in {"youtu.be", "www.youtu.be"}:
+        m = re.fullmatch(r"/([0-9A-Za-z_-]{11})/?", parts.path or "")
+        return m.group(1) if m else None
+    query_id = parse_qs(parts.query).get("v", [None])[0]
+    if query_id and _ID_RE.fullmatch(query_id):
+        return query_id
+    m = re.fullmatch(r"/(?:shorts|embed|live|v)/([0-9A-Za-z_-]{11})/?",
+                     parts.path or "")
+    return m.group(1) if m else None
 
 
 def is_youtube_url(url: str) -> bool:
@@ -66,6 +92,9 @@ def channel_info(url: str, limit: int = 20) -> dict:
     Returns {channel, items:[{url,title,thumbnail,views,duration,channel}]}.
     Best-effort; never raises."""
     out = {"channel": "", "channel_url": url.strip(), "items": []}
+    if not _is_youtube_host(url):
+        _log("channel_info rejected non-YouTube URL")
+        return out
     try:
         import yt_dlp
         opts = {"quiet": True, "skip_download": True, "no_warnings": True,
@@ -73,8 +102,6 @@ def channel_info(url: str, limit: int = 20) -> dict:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url.strip(), download=False)
         ch_name = info.get("title") or info.get("channel") or info.get("uploader") or ""
-        # yt-dlp suffixes the playlist tab onto the title (e.g. "TED - Videos").
-        # Strip the common tab suffixes so the card shows the clean channel name.
         for _suf in (" - Videos", " - Shorts", " - Home", " - Playlists", " - Live"):
             if ch_name.endswith(_suf):
                 ch_name = ch_name[: -len(_suf)]
@@ -85,7 +112,6 @@ def channel_info(url: str, limit: int = 20) -> dict:
             u = e.get("url") or (f"https://www.youtube.com/watch?v={vid}" if vid else "")
             if not u:
                 continue
-            # extract_flat exposes a thumbnails list and (sometimes) view_count.
             thumb = ""
             thumbs = e.get("thumbnails") or []
             if thumbs:
@@ -130,8 +156,6 @@ def niche_scan(urls, per_channel: int = 12) -> dict:
             "channel_url": u,
             "count": kept,
         })
-    # Sort the deck by views desc so the strongest performers surface first,
-    # exactly like a YouTube recommendation rail.
     videos.sort(key=lambda v: v.get("views") or 0, reverse=True)
     return {"channels": channels, "videos": videos}
 
@@ -162,11 +186,7 @@ def search_videos(query: str, limit: int = 12) -> list:
 #  Transcript -> topic + speaking style
 # --------------------------------------------------------------------------- #
 def fetch_transcript(video_id: str, max_chars: int = 6000) -> str:
-    """Return the spoken transcript as plain text, or '' on any failure.
-
-    Supports both the new (>=1.x instance) and old (<=0.6 static) API shapes of
-    youtube-transcript-api.
-    """
+    """Return the spoken transcript as plain text, or '' on any failure."""
     try:
         from youtube_transcript_api import YouTubeTranscriptApi as API
     except Exception as e:
@@ -174,12 +194,9 @@ def fetch_transcript(video_id: str, max_chars: int = 6000) -> str:
         return ""
 
     segments = None
-    # New API (1.x): instance .fetch() -> FetchedTranscript (iterable of snippets).
-    # Try EN first (most reliable), then fall back to ANY available language and
-    # auto-translate to English so non-EN videos still get an analysis transcript.
     try:
         api = API()
-        for langs in (["en", "en-US", "en-GB"], None):  # None => "any language"
+        for langs in (["en", "en-US", "en-GB"], None):
             try:
                 fetched = api.fetch(video_id, languages=langs) if langs else api.fetch(video_id)
                 segments = [getattr(s, "text", "") for s in fetched]
@@ -187,7 +204,6 @@ def fetch_transcript(video_id: str, max_chars: int = 6000) -> str:
                     break
             except Exception:
                 continue
-        # Last-ditch: ask the API to auto-translate whatever it has into English.
         if not segments:
             try:
                 tl = api.fetch(video_id, languages=["en"], translate_to_english=True)
@@ -195,7 +211,6 @@ def fetch_transcript(video_id: str, max_chars: int = 6000) -> str:
             except Exception:
                 pass
     except Exception as e1:
-        # Old API (<=0.6): static get_transcript -> list[dict]
         try:
             data = API.get_transcript(video_id, languages=["en", "en-US", "en-GB"])
             segments = [d.get("text", "") for d in data]
@@ -216,6 +231,9 @@ def fetch_transcript(video_id: str, max_chars: int = 6000) -> str:
 def fetch_metadata(url: str, video_id: str = None) -> dict:
     """Best-effort title/channel/duration/thumbnail via yt-dlp (no download)."""
     out = {"title": "", "channel": "", "duration": 0, "thumbnail": ""}
+    if not _is_youtube_host(url):
+        _log("metadata rejected non-YouTube URL")
+        return out
     try:
         import yt_dlp
         opts = {"quiet": True, "skip_download": True, "no_warnings": True,
@@ -234,8 +252,7 @@ def fetch_metadata(url: str, video_id: str = None) -> dict:
 
 
 def thumbnail_bytes(video_id: str, thumb_url: str = "") -> bytes:
-    """Download a single representative still. Tries the given URL then the
-    standard maxres/hq/sd/mq thumbnail endpoints. Returns b'' on failure."""
+    """Download a single representative still from YouTube's CDN."""
     candidates = [u for u in [
         thumb_url,
         f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg",
@@ -243,8 +260,6 @@ def thumbnail_bytes(video_id: str, thumb_url: str = "") -> bytes:
         f"https://i.ytimg.com/vi/{video_id}/sddefault.jpg",
         f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg",
     ] if u]
-    # Last-ditch: ask YouTube's own oEmbed JSON for a thumbnail URL — works
-    # even when the standard CDN paths 404 (private / partial / processing).
     try:
         r = requests.get(
             f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json",
@@ -269,14 +284,10 @@ def thumbnail_bytes(video_id: str, thumb_url: str = "") -> bytes:
 
 
 def storyboard_frames(url: str, video_id: str, max_frames: int = 12):
-    """Grab YouTube's seek-preview STORYBOARD sprite sheets and slice them into
-    individual real video stills. These are served from a separate CDN endpoint
-    that almost always works even when the full video stream download is blocked
-    / throttled (the #1 cause of 'only got 1 thumbnail -> weak style copy').
-
-    Returns a list of web paths (saved to data/frames) or [] on failure.
-    Never raises.
-    """
+    """Grab YouTube storyboard sprites and save individual stills."""
+    if not _is_youtube_host(url):
+        _log("storyboard rejected non-YouTube URL")
+        return []
     try:
         import yt_dlp
         from PIL import Image
@@ -284,8 +295,6 @@ def storyboard_frames(url: str, video_id: str, max_frames: int = 12):
     except Exception as e:
         _log(f"storyboard deps missing: {e}")
         return []
-    # 1. Find storyboard formats (format_id starts with 'sb', vcodec 'none',
-    #    they carry .fragments = the sprite-sheet image URLs).
     try:
         opts = {"quiet": True, "no_warnings": True, "noplaylist": True,
                 "skip_download": True, "socket_timeout": 25,
@@ -301,13 +310,8 @@ def storyboard_frames(url: str, video_id: str, max_frames: int = 12):
     if not sbs:
         _log("no storyboard formats available")
         return []
-    # Pick the HIGHEST-resolution storyboard (largest width) for the sharpest
-    # stills — that's the best style read.
-    sbs.sort(key=lambda f: (f.get("width") or 0) * (f.get("height") or 0),
-             reverse=True)
+    sbs.sort(key=lambda f: (f.get("width") or 0) * (f.get("height") or 0), reverse=True)
     sb = sbs[0]
-    # Each sprite sheet packs a grid of thumbnails (rows x cols). yt-dlp exposes
-    # columns/rows; default to a sane grid if absent.
     cols = int(sb.get("columns") or 5)
     rows = int(sb.get("rows") or 5)
     frag_urls = [fr.get("url") for fr in (sb.get("fragments") or [])
@@ -331,9 +335,7 @@ def storyboard_frames(url: str, video_id: str, max_frames: int = 12):
                 for rx in range(cols):
                     if len(out) >= max_frames:
                         break
-                    tile = sheet.crop((rx * cw, ry * ch,
-                                       (rx + 1) * cw, (ry + 1) * ch))
-                    # Skip near-black/blank padding tiles at the sheet's tail.
+                    tile = sheet.crop((rx * cw, ry * ch, (rx + 1) * cw, (ry + 1) * ch))
                     ex = tile.getextrema()
                     if all(lo == hi for lo, hi in ex):
                         continue
@@ -351,16 +353,14 @@ def storyboard_frames(url: str, video_id: str, max_frames: int = 12):
     return out[:max_frames]
 
 
-
 # --------------------------------------------------------------------------- #
 #  Frame download (yt-dlp -> ffmpeg)
 # --------------------------------------------------------------------------- #
 def download_frames(url: str, max_frames: int = 12, duration_hint: int = 0):
-    """Download the video (capped quality) and sample frames.
-
-    Returns (frame_web_paths, downloaded_path). On any failure returns ([], None)
-    so the caller can fall back to the thumbnail. Never raises.
-    """
+    """Download a validated YouTube video and sample frames."""
+    if not _is_youtube_host(url):
+        _log("frame download rejected non-YouTube URL")
+        return [], None
     try:
         import yt_dlp
     except Exception as e:
@@ -370,9 +370,6 @@ def download_frames(url: str, max_frames: int = 12, duration_hint: int = 0):
     os.makedirs(store.UPLOADS_DIR, exist_ok=True)
     tag = store.new_id("yt")
     outtmpl = os.path.join(store.UPLOADS_DIR, f"{tag}.%(ext)s")
-    # Prefer a small mp4 to keep the download fast — we only need stills.
-    # Use iOS+Android player clients as fallbacks: the web client gets bot-
-    # blocked from cloud IPs more often than the mobile ones do.
     opts = {
         "quiet": True, "no_warnings": True, "noplaylist": True,
         "socket_timeout": 30, "outtmpl": outtmpl,
@@ -387,25 +384,23 @@ def download_frames(url: str, max_frames: int = 12, duration_hint: int = 0):
             path = ydl.prepare_filename(info)
     except Exception as e:
         _log(f"download failed: {e}")
-        # Clean up any partial downloads (.part files) left by yt-dlp
         import glob as _glob
         for _pf in _glob.glob(os.path.join(store.UPLOADS_DIR, f"{tag}.*")):
             if ".part" in _pf:
-                try: os.remove(_pf)
-                except OSError: pass
+                try:
+                    os.remove(_pf)
+                except OSError:
+                    pass
         return [], None
 
     if not path or not os.path.exists(path):
-        # yt-dlp may have remuxed to a different extension.
         import glob
-        # Exclude .part files — those are incomplete downloads, not valid media
         hits = [h for h in glob.glob(os.path.join(store.UPLOADS_DIR, f"{tag}.*"))
                 if ".part" not in h]
         path = hits[0] if hits else None
     if not path or not os.path.exists(path):
         return [], None
 
-    # Sample evenly across the clip. Pick an fps that yields ~max_frames frames.
     try:
         dur = duration_hint or 0
         if not dur:
@@ -427,12 +422,7 @@ def download_frames(url: str, max_frames: int = 12, duration_hint: int = 0):
 #  Orchestration
 # --------------------------------------------------------------------------- #
 def ingest(url: str, max_frames: int = 12) -> dict:
-    """Gather everything Claude needs from a YouTube URL.
-
-    Returns:
-      { video_id, url, title, channel, duration, transcript,
-        frame_urls: [..], source: 'frames'|'thumbnail'|'none', notes: str }
-    """
+    """Gather everything Claude needs from a validated YouTube URL."""
     vid = extract_video_id(url)
     if not vid:
         raise ValueError("That doesn't look like a YouTube link.")
@@ -442,13 +432,6 @@ def ingest(url: str, max_frames: int = 12) -> dict:
 
     frames, _path = download_frames(url, max_frames=max_frames,
                                     duration_hint=meta.get("duration", 0))
-    # YouTube throttles frame downloads from some IPs transiently — the first
-    # attempt returns nothing, a retry seconds later succeeds. Without this the
-    # pipeline silently falls back to a SINGLE thumbnail as the only style
-    # anchor, which gives the image model far too weak a read of the source art
-    # style → "the generated video is a completely different style". Retry the
-    # real frame download with WIDENING backoff so the attempts span past a
-    # short throttle window, not all inside it.
     if not frames:
         import time as _time
         for _attempt, _wait in enumerate((5, 12), 1):
@@ -460,11 +443,6 @@ def ingest(url: str, max_frames: int = 12) -> dict:
             if frames:
                 _log(f"retry {_attempt} succeeded: {len(frames)} frames")
                 break
-    # Still nothing after retries → the video stream is genuinely blocked from
-    # this network. Fall back to YouTube's STORYBOARD sprite sheets: real video
-    # stills served from a separate CDN that usually works even when the stream
-    # is blocked. This recovers 6-12 real anchors → style copying stays strong,
-    # instead of degrading to one thumbnail.
     if not frames:
         _log(f"frame download failed after retries — trying storyboard for {vid}")
         sb = storyboard_frames(url, vid, max_frames=max_frames)
@@ -473,19 +451,18 @@ def ingest(url: str, max_frames: int = 12) -> dict:
     source = "frames"
     notes = ""
     if not frames:
-        # Fallback: one thumbnail still.
         tb = thumbnail_bytes(vid, meta.get("thumbnail", ""))
         if tb:
             web, _p = store.write_binary("frames", tb, ext="jpg",
                                          name_hint=f"ytthumb_{vid}")
             frames = [web]
             source = "thumbnail"
-            notes = ("Couldn't download the video OR its storyboard after "
-                     "retries (YouTube is hard-blocking this network); used the "
-                     "thumbnail only — STYLE COPYING WILL BE WEAK. Re-run the "
-                     "analysis in a few minutes, or try a VPN, for real frames.")
-            print(f"[youtube] ALL fallbacks exhausted for {vid} — "
-                  f"returning 1 thumbnail (style will be weak)", flush=True)
+            notes = ("Couldn't download the video OR its storyboard after retries "
+                     "(YouTube is hard-blocking this network); used the thumbnail only "
+                     "— STYLE COPYING WILL BE WEAK. Re-run the analysis in a few minutes, "
+                     "or try a VPN, for real frames.")
+            print(f"[youtube] ALL fallbacks exhausted for {vid} — returning 1 thumbnail "
+                  f"(style will be weak)", flush=True)
         else:
             source = "none"
             notes = "Couldn't fetch frames or thumbnail; analysis uses transcript only."
@@ -495,12 +472,6 @@ def ingest(url: str, max_frames: int = 12) -> dict:
             "Couldn't read this video — no transcript, frames, or thumbnail "
             "available. Try a different link (one with captions).")
 
-    # WHISPER FALLBACK for the way-of-speaking. fetch_transcript only reads
-    # YouTube CAPTIONS — videos with captions disabled (age-gated, music, many
-    # Shorts) return "", which means Claude gets NO transcript and can't learn
-    # the narration style. When that happens but we DID download the video file
-    # for frames, transcribe that local file with faster-whisper so the speaking
-    # style is still captured. Best-effort: never fail ingest over this.
     if not transcript and _path and os.path.exists(_path):
         try:
             import transcribe as _transmod
