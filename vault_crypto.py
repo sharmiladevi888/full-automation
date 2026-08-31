@@ -29,6 +29,7 @@ _SENSITIVE_KEYS = {
     "ninerouter_api_key",
     "mimo_api_key",
     "agentrouter_api_key",
+    "gemini_api_key",     # Gemini provider token
     "deepgram_api_key",   # TTS provider — fixed 2026-06-22 (was missing)
     "deepgram_secret",
     "puter_api_key",      # Image provider token — fixed 2026-08-24

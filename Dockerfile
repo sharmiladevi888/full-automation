@@ -15,7 +15,7 @@ USER appuser
 # authentication gate unless an operator explicitly overrides it.
 ENV AUTH_REQUIRED=true
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/api/health', timeout=5)" || exit 1
+    CMD python -c "import requests,sys; r=requests.get('http://localhost:8000/', timeout=5); sys.exit(0 if r.status_code == 200 else 1)" || exit 1
 EXPOSE 8000
 # Serve via ui_patch:app so the pro UI (fonts + animations + mobile) is injected.
 # Falls back to plain app:app if you prefer the bare UI.

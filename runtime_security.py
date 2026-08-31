@@ -47,11 +47,13 @@ def _verify_session(secret: bytes, token: str) -> Optional[str]:
     try:
         padded = payload + "=" * (-len(payload) % 4)
         data = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
-        email = str(data.get("email") or "")
+        if not isinstance(data, dict):
+            return None
+        email = data.get("email")
         exp = int(data.get("exp") or 0)
     except (ValueError, TypeError, UnicodeError, json.JSONDecodeError):
         return None
-    if not email or exp <= int(time.time()):
+    if not isinstance(email, str) or not email or exp <= int(time.time()):
         return None
     return email
 
@@ -66,7 +68,8 @@ class RuntimeSecurityMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         token = request.cookies.get("cs_session", "")
-        if request.method == "POST" and path == "/api/auth/logout" and token:
+        if (request.method == "POST" and path == "/api/auth/logout"
+                and token and self._verify_fn(token)):
             _REVOKED_SESSIONS.add(token)
         if path == "/data" or path.startswith("/data/"):
             # The app's configuration decides whether media is private. When

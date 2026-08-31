@@ -25,6 +25,7 @@ class AnalyseIn(BaseModel):
     image_url: str
     question: str = ""
 
+
 store.init()
 app = FastAPI(title="Continuity Studio Public")
 
@@ -42,6 +43,7 @@ def public_settings():
         "elevenlabs_voice_id": os.environ.get("PUBLIC_ELEVENLABS_VOICE_ID", getattr(config, "ELEVENLABS_VOICE_ID", "")),
         "elevenlabs_model": os.environ.get("PUBLIC_ELEVENLABS_MODEL", getattr(config, "ELEVENLABS_MODEL", "")),
     }
+
 
 public_settings_cached = public_settings()
 
@@ -121,6 +123,7 @@ def api_health():
 class MasterIn(BaseModel):
     master_prompt: str = ""
 
+
 @app.post("/api/master")
 def api_master(m: MasterIn):
     st = store.load_state()
@@ -132,7 +135,8 @@ def api_master(m: MasterIn):
 @app.post("/api/video")
 async def api_video(file: UploadFile = File(...), fps: float = Form(1.0), max_frames: int = Form(40)):
     import video as videomod
-    dest = os.path.join(store.UPLOADS_DIR, store.new_id("upload") + "_" + (file.filename or "video.mp4"))
+    _fn = os.path.basename((file.filename or "video.mp4").replace("..", "")) or "video.mp4"
+    dest = os.path.join(store.UPLOADS_DIR, store.new_id("upload") + "_" + _fn)
     with open(dest, "wb") as f:
         f.write(await file.read())
     try:
@@ -145,6 +149,7 @@ async def api_video(file: UploadFile = File(...), fps: float = Form(1.0), max_fr
 class StyleFramesIn(BaseModel):
     urls: List[str] = []
 
+
 @app.post("/api/style-frames")
 def api_style_frames(s: StyleFramesIn):
     st = store.load_state()
@@ -155,7 +160,8 @@ def api_style_frames(s: StyleFramesIn):
 
 @app.post("/api/scene-detect")
 async def api_scene_detect(file: UploadFile = File(...), threshold: float = Form(0.4)):
-    dest = os.path.join(store.UPLOADS_DIR, store.new_id("scene") + "_" + (file.filename or "video.mp4"))
+    _fn = os.path.basename((file.filename or "video.mp4").replace("..", "")) or "video.mp4"
+    dest = os.path.join(store.UPLOADS_DIR, store.new_id("scene") + "_" + _fn)
     with open(dest, "wb") as f:
         f.write(await file.read())
     try:
@@ -171,6 +177,7 @@ class CharacterIn(BaseModel):
     description: str = ""
     size: Optional[str] = None
     quality: Optional[str] = None
+
 
 @app.post("/api/characters")
 def api_create_character(c: CharacterIn):
@@ -201,6 +208,7 @@ class CharacterBatchIn(BaseModel):
     text: str
     size: Optional[str] = None
     quality: Optional[str] = None
+
 
 @app.post("/api/characters/batch")
 def api_create_characters_batch(b: CharacterBatchIn):
@@ -237,6 +245,7 @@ class CharacterUploadIn(BaseModel):
     description: str = ""
     file_name: Optional[str] = None
 
+
 @app.post("/api/characters/upload")
 async def api_upload_character(c: CharacterUploadIn, file: UploadFile = File(...)):
     contents = await file.read()
@@ -253,6 +262,7 @@ class GenerateIn(BaseModel):
     prompt: str = ""
     size: Optional[str] = None
     quality: Optional[str] = None
+
 
 @app.post("/api/generate")
 def api_generate(g: GenerateIn):
