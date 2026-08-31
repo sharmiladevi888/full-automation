@@ -20,19 +20,13 @@ import config
 
 DATA_DIR = config.DATA_DIR
 
-# The request middleware serializes scoped API/data requests so these legacy
-# module-level path attributes remain safe for older app.py call sites that
-# access store.UPLOADS_DIR directly. All persistence helpers also derive paths
-# from the ContextVar, so worker threads can set their own scope explicitly.
 _SCOPE = ContextVar("continuity_store_scope", default="")
 _SCOPE_DIR_NAME = "users"
 _SCOPE_ID_LEN = 24
 _MEDIA_KINDS = ("images", "characters", "frames", "uploads", "audio", "videos")
 
 # One re-entrant lock protects all JSON state/index read-modify-write cycles in
-# this process. Atomic replacement prevents torn files; the request wrapper
-# keeps a complete endpoint mutation together so load -> mutate -> save does
-# not lose updates to another request.
+# this process. Atomic replacement prevents torn files.
 _STORE_LOCK = threading.RLock()
 _INDEX_LOCK = _STORE_LOCK  # backwards-compatible name used by older code
 
@@ -57,19 +51,14 @@ def current_scope():
 def set_user_scope(email):
     """Set the account scope for the current execution context.
 
-    Returns the ContextVar token; callers must pass it to reset_user_scope() in
-    a finally block. The compatibility path constants are refreshed for legacy
-    app.py references while the request lock is held by the runtime wrapper.
+    Returns the ContextVar token; callers must pass it to reset_user_scope().
     """
-    token = _SCOPE.set(str(email or "").strip().lower())
-    _refresh_compat_paths()
-    return token
+    return _SCOPE.set(str(email or "").strip().lower())
 
 
 def reset_user_scope(token):
-    """Restore the previous account scope and compatibility paths."""
+    """Restore the previous account scope."""
     _SCOPE.reset(token)
-    _refresh_compat_paths()
 
 
 def _root_dir():
@@ -79,10 +68,35 @@ def _root_dir():
     return DATA_DIR
 
 
+def storage_root():
+    """Return the current account's storage root for cooperating modules."""
+    return _root_dir()
+
+
 def scope_url_prefix(email=None):
     """Return the only /data URL prefix allowed for the current account."""
     sid = scope_id(email)
     return f"/data/{_SCOPE_DIR_NAME}/{sid}/" if sid else "/data/"
+
+
+class _ScopedPath:
+    """PathLike proxy that resolves against the current ContextVar scope.
+
+    app.py and the media helpers access module-level paths such as
+    store.UPLOADS_DIR. A dynamic proxy keeps those legacy call sites tenant
+    safe even when requests for different accounts overlap.
+    """
+    def __init__(self, relative):
+        self.relative = relative
+
+    def __fspath__(self):
+        return os.path.join(_root_dir(), self.relative)
+
+    def __str__(self):
+        return os.fspath(self)
+
+    def __repr__(self):
+        return repr(os.fspath(self))
 
 
 def _path_map(root=None):
@@ -100,16 +114,19 @@ def _path_map(root=None):
 
 def _refresh_compat_paths():
     """Refresh module attributes retained for the existing app.py API."""
+    for kind in _MEDIA_KINDS:
+        globals()[f"{kind.upper()}_DIR"] = _ScopedPath(kind)
+    globals()["PROJECTS_DIR"] = _ScopedPath("projects")
     paths = _path_map()
-    globals().update(paths)
+    for name in ("INDEX_PATH", "STATE_PATH", "USAGE_PATH"):
+        globals()[name] = paths[name]
     if "_FOLDER" in globals():
         globals()["_FOLDER"] = {
-            kind: paths[f"{kind.upper()}_DIR"]
+            kind: _ScopedPath(kind)
             for kind in ("images", "characters", "frames", "audio", "videos")
         }
 
 
-# Initialize compatibility paths for local/legacy mode.
 _refresh_compat_paths()
 
 _DEFAULT_STATE = {
@@ -146,7 +163,7 @@ def _default_state():
 
 def _atomic_write_json(path, payload):
     """Write JSON via fsync + same-directory replace."""
-    directory = os.path.dirname(path) or "."
+    directory = os.path.dirname(os.fspath(path)) or "."
     os.makedirs(directory, exist_ok=True)
     fd = None
     tmp_path = None
@@ -202,8 +219,7 @@ def _write_index(idx):
 
 def _project_path(pid):
     # IDs are generated locally and must never be allowed to become path
-    # components supplied by a request. This also closes the historical
-    # ../../ traversal in duplicate/load/delete project operations.
+    # components supplied by a request. This also closes ../../ traversal.
     if not isinstance(pid, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", pid):
         raise ValueError("invalid project id")
     return os.path.join(_root_dir(), "projects", f"{pid}.json")
@@ -240,8 +256,6 @@ def _add_project(name, state=None, make_current=True):
 
 
 def init():
-    # Initialize the local/legacy tree at import time. Scoped trees are created
-    # lazily on the first request for each account.
     _refresh_compat_paths()
     for d in (DATA_DIR, IMAGES_DIR, CHARS_DIR, FRAMES_DIR, UPLOADS_DIR,
               AUDIO_DIR, VIDEOS_DIR, PROJECTS_DIR):
@@ -416,11 +430,11 @@ def delete_project(pid):
 #  Media helpers
 # --------------------------------------------------------------------------- #
 _FOLDER = {
-    "images": IMAGES_DIR,
-    "characters": CHARACTERS_DIR,
-    "frames": FRAMES_DIR,
-    "audio": AUDIO_DIR,
-    "videos": VIDEOS_DIR,
+    "images": _ScopedPath("images"),
+    "characters": _ScopedPath("characters"),
+    "frames": _ScopedPath("frames"),
+    "audio": _ScopedPath("audio"),
+    "videos": _ScopedPath("videos"),
 }
 
 
@@ -518,7 +532,6 @@ def _write_usage(entries):
     try:
         _atomic_write_json(_usage_path(), entries)
     except OSError:
-        # Usage logging is non-critical — don't crash the pipeline on disk-full.
         pass
 
 
