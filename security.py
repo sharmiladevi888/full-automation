@@ -1,6 +1,5 @@
 """Security helpers for authentication, rate limiting, and uploads."""
 import hashlib
-import hmac
 import os
 import re
 import threading
@@ -100,12 +99,7 @@ EXTENSION_MIMES = {
 
 
 def validate_upload(filename: str, content_type: str, allowed: set) -> Tuple[bool, str]:
-    """Validate a media upload using both its declared MIME and extension.
-
-    A missing MIME is accepted only when a known media extension gives us a
-    safe inference. Unknown extensions and executable/script extensions are
-    rejected rather than silently written into the media tree.
-    """
+    """Validate a media upload using both its declared MIME and extension."""
     if not filename:
         return False, "No filename provided"
     ext = os.path.splitext(str(filename))[1].lower()
@@ -114,6 +108,10 @@ def validate_upload(filename: str, content_type: str, allowed: set) -> Tuple[boo
         return False, f"File type {ext} not allowed"
     allowed = set(allowed or ())
     declared = (content_type or "").split(";", 1)[0].strip().lower()
+    # Some multipart clients use the generic binary type even when the
+    # extension is trustworthy; infer the media MIME in that case.
+    if declared in {"application/octet-stream", "application/binary"}:
+        declared = ""
     if declared:
         if declared not in allowed:
             return False, f"Content type {declared} not allowed"
