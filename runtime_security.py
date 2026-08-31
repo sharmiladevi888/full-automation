@@ -105,8 +105,6 @@ def _load_revoked_sessions():
                     except (TypeError, ValueError):
                         continue
         elif isinstance(raw, list):
-            # Migrate a possible old list-of-raw-tokens file without keeping
-            # those tokens in memory or on disk after the next write.
             for token in raw:
                 if token:
                     _REVOKED_SESSIONS[_token_digest(token)] = now + _SESSION_TTL_SECONDS
@@ -197,6 +195,7 @@ def _install_upload_validation():
     if getattr(StarletteUploadFile, "_bugwatch_upload_hook", False):
         return
     import security
+    from fastapi import HTTPException
 
     original = StarletteUploadFile.read
     video_exts = {".mp4", ".webm", ".mov", ".avi", ".mkv", ".mpeg", ".mpg"}
@@ -214,13 +213,12 @@ def _install_upload_validation():
         elif content_type.startswith("audio/") or ext in audio_exts:
             allowed = security.ALLOWED_AUDIO_MIMES
         else:
-            raise __import__("fastapi").HTTPException(415, "Unsupported upload type")
+            raise HTTPException(415, "Unsupported upload type")
         if not content_type:
-            inferred = security.EXTENSION_MIMES.get(ext, "")
-            content_type = inferred
+            content_type = security.EXTENSION_MIMES.get(ext, "")
         ok, message = security.validate_upload(filename, content_type, allowed)
         if not ok:
-            raise __import__("fastapi").HTTPException(415, message)
+            raise HTTPException(415, message)
         return await original(self, *args, **kwargs)
 
     StarletteUploadFile.read = validated_read
@@ -228,7 +226,6 @@ def _install_upload_validation():
 
 
 def _install_safe_app_hooks(app_module):
-    # Corrupt vault JSON or a non-dict vault must not take down auth middleware.
     if callable(getattr(app_module, "load_vault", None)) and not getattr(
             app_module, "_bugwatch_safe_vault", False):
         original_load_vault = app_module.load_vault
@@ -244,8 +241,6 @@ def _install_safe_app_hooks(app_module):
         app_module.load_vault = safe_load_vault
         app_module._bugwatch_safe_vault = True
 
-    # Route calls to the process-tree-aware runner while preserving the
-    # CompletedProcess-like interface expected by legacy app.py code.
     if callable(getattr(app_module, "_run_capture", None)) and not getattr(
             app_module, "_bugwatch_safe_capture", False):
         import process_manager
@@ -258,6 +253,38 @@ def _install_safe_app_hooks(app_module):
 
         app_module._run_capture = safe_capture
         app_module._bugwatch_safe_capture = True
+
+    # Audio Studio uses config.DATA_DIR directly in its helper. Replace that
+    # helper after app import so generated clips follow the same tenant root as
+    # project state and their returned URLs remain accessible to that tenant.
+    try:
+        import audio_gen
+        import store
+        if not getattr(audio_gen, "_bugwatch_audio_scope", False):
+            def scoped_audio_dir():
+                d = os.path.join(store.storage_root(), audio_gen.AUDIO_GEN_DIR_NAME)
+                os.makedirs(d, exist_ok=True)
+                return d
+
+            original_write_audio = audio_gen.write_audio_clip
+
+            def scoped_write_audio(*args, **kwargs):
+                meta = original_write_audio(*args, **kwargs)
+                if store.current_scope() and meta.get("path"):
+                    rel = os.path.relpath(meta["path"], store.DATA_DIR).replace(os.sep, "/")
+                    meta["url"] = f"/data/{rel}"
+                    try:
+                        with open(meta["path"] + ".json", "w", encoding="utf-8") as f:
+                            json.dump(meta, f, indent=2)
+                    except Exception:
+                        pass
+                return meta
+
+            audio_gen.audio_gen_dir = scoped_audio_dir
+            audio_gen.write_audio_clip = scoped_write_audio
+            audio_gen._bugwatch_audio_scope = True
+    except Exception:
+        pass
 
     _install_upload_validation()
     _install_secure_cookie_hook()
